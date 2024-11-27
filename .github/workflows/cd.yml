@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
+      # Step 1: Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Configure AWS credentials
+      # Step 2: Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -23,14 +23,12 @@ jobs:
           aws-region: us-east-1
 
       # Step 3: Terraform - Apply infrastructure
-      - name: Infrastructure Setup
+      - name: Terraform Apply
         run: |
           cd terraform
 
-          # Initialize Terraform
+          # Initialize and Apply Terraform
           terraform init
-
-          # Apply Terraform
           terraform apply -auto-approve
 
           # Capture the public and private IPs from Terraform output
@@ -48,44 +46,50 @@ jobs:
           echo "AGENT_PRIVATE_IP=$AGENT_PRIVATE_IP" >> $GITHUB_ENV
           echo "PROMETHEUS_PUBLIC_IP=$PROMETHEUS_PUBLIC_IP" >> $GITHUB_ENV
 
-      # Step 4: Update Ansible Hosts and Vars
+      # Step 4: Update Ansible Hosts
       - name: Update Ansible Hosts and Vars
         run: |
-          cd ansible
+          # Define paths
+          HOSTS_FILE=ansible/hosts.ini
+          VARS_FILE=ansible/vars.yml
 
           # Dynamically add agent and prometheus_server to hosts.ini
-          if ! grep -q '\[agent\]' hosts.ini; then
-            echo -e "\n[agent]" >> hosts.ini
-            echo "${{ env.AGENT_PUBLIC_IP }}" >> hosts.ini
+          if ! grep -q '\[agent\]' $HOSTS_FILE; then
+            echo -e "\n[agent]" >> $HOSTS_FILE
+            echo "${{ env.AGENT_PUBLIC_IP }}" >> $HOSTS_FILE
           fi
 
-          if ! grep -q '\[prometheus_server\]' hosts.ini; then
-            echo -e "\n[prometheus_server]" >> hosts.ini
-            echo "${{ env.PROMETHEUS_PUBLIC_IP }}" >> hosts.ini
+          if ! grep -q '\[prometheus_server\]' $HOSTS_FILE; then
+            echo -e "\n[prometheus_server]" >> $HOSTS_FILE
+            echo "${{ env.PROMETHEUS_PUBLIC_IP }}" >> $HOSTS_FILE
           fi
 
-          # Update the first 3 lines in vars.yml dynamically
-          sed -i "1s/.*/agent: ${{ env.AGENT_PUBLIC_IP }}/" vars.yml
-          sed -i "2s/.*/prometheus_server: ${{ env.PROMETHEUS_PUBLIC_IP }}/" vars.yml
+          # Update vars.yml dynamically
+          sed -i "1s/.*/agent: ${{ env.AGENT_PUBLIC_IP }}/" $VARS_FILE
+          sed -i "2s/.*/prometheus_server: ${{ env.PROMETHEUS_PUBLIC_IP }}/" $VARS_FILE
 
-      # Step 5: Run Ansible Playbook
+      # Step 5: Add SSH Key
+      - name: Add SSH Key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
+          chmod 600 ansible/ssh_key.pem
+
+      # Step 6: Run Ansible Playbooks
       - name: Run Ansible Playbook - Agent
         run: |
-          cd ansible
-          ansible-playbook -i hosts.ini agent_play.yml --private-key ssh_key.pem
+          ansible-playbook -i ansible/hosts.ini ansible/agent_play.yml --private-key ansible/ssh_key.pem
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      # - name: Run Ansible Playbook - Prometheus
-      #   run: |
-      #     cd ansible
-      #     ansible-playbook -i hosts.ini prometheus_play.yml --private-key ssh_key.pem
-      #   env:
-      #     ANSIBLE_HOST_KEY_CHECKING: "False"
+      - name: Run Ansible Playbook - Prometheus
+        run: |
+          ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      # Step 6: Destroy Terraform resources (Optional, if required)
+      # Step 7: Destroy Terraform Resources (Optional)
       - name: Destroy Terraform Resources
         if: always()
         run: |
-          cd ansible/roles/4.terraform
+          cd terraform
           terraform destroy -auto-approve
