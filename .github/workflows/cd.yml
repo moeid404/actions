@@ -56,16 +56,17 @@ jobs:
             exit 1
           fi
       
-          # Update hosts.ini dynamically
-          echo "[agent]" > ansible/hosts.ini
-          echo "$AGENT_IP" >> ansible/hosts.ini
-          echo "" >> ansible/hosts.ini
-          echo "[prometheus_server]" >> ansible/hosts.ini
-          echo "$PROMETHEUS_IP" >> ansible/hosts.ini
-          echo "" >> ansible/hosts.ini
-          echo "[all:vars]" >> ansible/hosts.ini
-          echo "ansible_user=ubuntu" >> ansible/hosts.ini
+          # Update ansible/hosts.ini dynamically
+          echo "[agent]" > ../ansible/hosts.ini
+          echo "$AGENT_IP" >> ../ansible/hosts.ini
+          echo "" >> ../ansible/hosts.ini
+          echo "[prometheus_server]" >> ../ansible/hosts.ini
+          echo "$PROMETHEUS_IP" >> ../ansible/hosts.ini
+          echo "" >> ../ansible/hosts.ini
+          echo "[all:vars]" >> ../ansible/hosts.ini
+          echo "ansible_user=ubuntu" >> ../ansible/hosts.ini
         working-directory: terraform
+        
         
 
       - name: Add SSH Key
