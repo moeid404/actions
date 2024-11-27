@@ -113,7 +113,9 @@ resource "aws_instance" "agent" {
   security_groups = [aws_security_group.agent_sg.name]
 
   tags = {
-    Name = "agent-server"
+    Name        = "agent-server"
+    Environment = "production" # Added to filter instances for GitHub Actions
+    Role        = "agent"
   }
 }
 
@@ -124,17 +126,20 @@ resource "aws_instance" "prometheus" {
   security_groups = [aws_security_group.prometheus_sg.name]
 
   tags = {
-    Name = "prometheus_server"
+    Name        = "prometheus-server"
+    Environment = "production" # Added to filter instances for GitHub Actions
+    Role        = "prometheus"
   }
 }
 
 # Outputs for the agent instance
 output "agent_public_ip" {
   value = aws_instance.agent.public_ip
+  description = "Public IP of the agent server"
 }
 
 # Outputs for the Prometheus server
 output "prometheus_public_ip" {
   value = aws_instance.prometheus.public_ip
+  description = "Public IP of the Prometheus server"
 }
-
