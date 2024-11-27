@@ -25,7 +25,7 @@ jobs:
       # Step 3: Terraform - Apply infrastructure
       - name: Infrastructure Setup
         run: |
-          cd ansible/roles/4.terraform
+          cd terraform
 
           # Initialize Terraform
           terraform init
@@ -66,8 +66,7 @@ jobs:
 
           # Update the first 3 lines in vars.yml dynamically
           sed -i "1s/.*/agent: ${{ env.AGENT_PUBLIC_IP }}/" vars.yml
-          sed -i "2s/.*/wp_db_host: ${{ env.AGENT_PRIVATE_IP }}/" vars.yml
-          sed -i "3s/.*/prometheus_server: ${{ env.PROMETHEUS_PUBLIC_IP }}/" vars.yml
+          sed -i "2s/.*/prometheus_server: ${{ env.PROMETHEUS_PUBLIC_IP }}/" vars.yml
 
       # Step 5: Run Ansible Playbook
       - name: Run Ansible Playbook - Agent
