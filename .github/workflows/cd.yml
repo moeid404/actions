@@ -40,33 +40,11 @@ jobs:
           terraform apply -auto-approve
           terraform output -json > terraform-output.json
         working-directory: terraform
-
-      - name: Debug Terraform Output File
-        run: |
-          cat terraform/terraform-output.json
-      
-      - name: Parse Terraform Outputs and Update Hosts File
-        run: |
-          # Define the file path
-          HOSTS_FILE=ansible/hosts.ini
-      
-          # Extract IPs directly from Terraform
-          AGENT_PUBLIC_IP=$(terraform output -raw agent_public_ip)
-          PROMETHEUS_PUBLIC_IP=$(terraform output -raw prometheus_public_ip)
-      
-          # Debug outputs
-          echo "Agent Public IP: $AGENT_PUBLIC_IP"
-          echo "Prometheus Server IP: $PROMETHEUS_PUBLIC_IP"
-      
-          # Create or overwrite the hosts.ini file using echo
-          echo "[agent]" > $HOSTS_FILE
-          echo "$AGENT_PUBLIC_IP" >> $HOSTS_FILE
-          echo "[prometheus_server]" >> $HOSTS_FILE
-          echo "$PROMETHEUS_PUBLIC_IP" >> $HOSTS_FILE
-          echo "[all:vars]" >> $HOSTS_FILE
-          echo "ansible_user=ubuntu" >> $HOSTS_FILE
-          working-directory: terraform
         
+      - name: Update Hosts File
+        run: |
+          chmod +x update_hosts.sh
+          ./update_hosts.sh
 
       - name: Add SSH Key
         run: |
