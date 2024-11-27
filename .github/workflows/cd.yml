@@ -73,7 +73,7 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
           chmod 600 ansible/ssh_key.pem
         shell: bash
-        
+
       - name: Debug Hosts File
         run: cat ansible/hosts.ini
       
@@ -83,11 +83,11 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      - name: Run Ansible Playbook - Prometheus
-        run: |
-          ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
+      # - name: Run Ansible Playbook - Prometheus
+      #   run: |
+      #     ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
+      #   env:
+      #     ANSIBLE_HOST_KEY_CHECKING: "False"
 
       - name: Destroy Terraform Resources
         if: always() # Ensure this runs regardless of the job's success or failure
