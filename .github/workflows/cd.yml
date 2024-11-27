@@ -58,13 +58,15 @@ jobs:
 
       - name: Add SSH Key
         run: |
-          # Write the SSH private key from the GitHub Secret to the `ssh_key.pem` file
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
           chmod 600 ansible/ssh_key.pem
         shell: bash
 
       - name: Debug Hosts File
         run: cat ansible/hosts.ini
+
+      - name: Wait for Instances to Initialize
+        run: sleep 60  # Adjust the sleep duration based on instance initialization time
 
       - name: Run Ansible Playbook - Agent
         run: |
@@ -79,7 +81,7 @@ jobs:
       #     ANSIBLE_HOST_KEY_CHECKING: "False"
 
       - name: Destroy Terraform Resources
-        if: always() # Ensure this runs regardless of the job's success or failure
+        if: always()
         run: |
           terraform destroy -auto-approve
         working-directory: terraform
