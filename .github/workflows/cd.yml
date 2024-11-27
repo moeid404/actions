@@ -1,10 +1,11 @@
 name: CD Pipeline
 
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - CI Pipeline  # Name of your CI workflow
+    types:
+      - completed
 
 jobs:
   deploy:
@@ -31,7 +32,6 @@ jobs:
           cd terraform
           terraform init
           terraform apply -auto-approve
-          terraform output -json > ../terraform-output.json
 
       - name: Fetch EC2 Instance IPs
         run: |

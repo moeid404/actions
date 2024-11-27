@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: node-app-ingress
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - nodeapp.com
+    secretName: nodeapp-tls # TLS secret for SSL
+  rules:
+  - host: nodeapp.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: node-app-service
+            port:
+              number: 80

@@ -1,0 +1,48 @@
+- name: Create King Cluster With Nginx Ingress Controller
+  script: KindCluster-with-ingress.sh
+
+- name: Create SSL Secret
+  script: SSL.sh
+
+- name: Add app entry to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1    nodeapp.com"
+    state: present
+    backup: yes
+
+- name: Create a working directory for Kubernetes manifests
+  file:
+    path: /opt/k8s-manifests
+    state: directory
+    mode: '0755'
+
+- name: Copy deployment.yml to the remote server
+  copy:
+    src: deployment.yml
+    dest: /opt/k8s-manifests/deployment.yml
+
+- name: Copy service.yml to the remote server
+  copy:
+    src: service.yml
+    dest: /opt/k8s-manifests/service.yml
+
+- name: Copy ingress.yml to the remote server
+  copy:
+    src: ingress.yml
+    dest: /opt/k8s-manifests/ingress.yml
+
+- name: Apply deployment.yml
+  command: kubectl apply -f /opt/k8s-manifests/deployment.yml
+  args:
+    warn: false
+
+- name: Apply service.yml
+  command: kubectl apply -f /opt/k8s-manifests/service.yml
+  args:
+    warn: false
+
+- name: Apply ingress.yml
+  command: kubectl apply -f /opt/k8s-manifests/ingress.yml
+  args:
+    warn: false
