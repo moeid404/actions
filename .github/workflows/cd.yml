@@ -34,7 +34,11 @@ jobs:
           terraform apply -auto-approve
           terraform output -json > terraform-output.json
         working-directory: terraform
-
+        
+      - name: Debug Terraform Output File
+        run: |
+          cat terraform/terraform-output.json
+      
       - name: Update Ansible Hosts File
         run: |
           # Parse Terraform outputs
