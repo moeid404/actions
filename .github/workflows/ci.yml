@@ -23,7 +23,7 @@ jobs:
           cd src
           npm install
 
-      - name: Start Application
+      - name: Start Applicationn
         run: |
           cd src
           npm start &
