@@ -34,20 +34,26 @@ jobs:
           terraform apply -auto-approve
           terraform output -json > terraform-output.json
         working-directory: terraform
-        
+
       - name: Debug Terraform Output File
         run: |
           cat terraform/terraform-output.json
       
-      - name: Update Ansible Hosts File
+      - name: Parse Terraform Outputs with Bash
         run: |
-          # Parse Terraform outputs
-          AGENT_IP=$(jq -r '.agent_public_ip.value' terraform/terraform-output.json)
-          PROMETHEUS_IP=$(jq -r '.prometheus_public_ip.value' terraform/terraform-output.json)
+          # Read JSON and extract values
+          AGENT_IP=$(grep -oP '"agent_public_ip":\s*{\s*"sensitive":\s*false,\s*"type":\s*"string",\s*"value":\s*"\K[^\"]+' terraform/terraform-output.json)
+          PROMETHEUS_IP=$(grep -oP '"prometheus_public_ip":\s*{\s*"sensitive":\s*false,\s*"type":\s*"string",\s*"value":\s*"\K[^\"]+' terraform/terraform-output.json)
 
           # Debug outputs
           echo "Agent IP: $AGENT_IP"
           echo "Prometheus IP: $PROMETHEUS_IP"
+
+          # Check for parsing errors
+          if [ -z "$AGENT_IP" ] || [ -z "$PROMETHEUS_IP" ]; then
+            echo "Error: Unable to parse IP addresses from Terraform output"
+            exit 1
+          fi
 
           # Update hosts.ini dynamically
           echo "[agent]" > ansible/hosts.ini
@@ -58,6 +64,7 @@ jobs:
           echo "" >> ansible/hosts.ini
           echo "[all:vars]" >> ansible/hosts.ini
           echo "ansible_user=ubuntu" >> ansible/hosts.ini
+
 
       - name: Add SSH Key
         run: |
