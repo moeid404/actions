@@ -66,8 +66,6 @@ jobs:
           echo "[all:vars]" >> ../ansible/hosts.ini
           echo "ansible_user=ubuntu" >> ../ansible/hosts.ini
         working-directory: terraform
-        
-        
 
       - name: Add SSH Key
         run: |
@@ -75,7 +73,10 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
           chmod 600 ansible/ssh_key.pem
         shell: bash
-
+        
+      - name: Debug Hosts File
+        run: cat ansible/hosts.ini
+      
       - name: Run Ansible Playbook - Agent
         run: |
           ansible-playbook -i ansible/hosts.ini ansible/agent_play.yml --private-key ansible/ssh_key.pem
