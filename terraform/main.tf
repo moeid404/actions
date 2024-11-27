@@ -133,10 +133,6 @@ output "agent_public_ip" {
   value = aws_instance.agent.public_ip
 }
 
-output "agent_private_ip" { # Rename this to agent_private_ip for consistency
-  value = aws_instance.agent.private_ip
-}
-
 # Outputs for the Prometheus server
 output "prometheus_public_ip" {
   value = aws_instance.prometheus.public_ip
