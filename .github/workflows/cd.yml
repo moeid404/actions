@@ -1,20 +1,25 @@
 name: CD Pipeline
 
 on:
+  # workflow_run:
+  #   workflows:
+  #     - CI Pipeline
+  #   types:
+  #     - completed
   push:
     branches:
-      - master
+      - main
+
 
 jobs:
   deploy:
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -22,74 +27,70 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Step 3: Terraform - Apply infrastructure
-      - name: Terraform Apply
-        run: |
-          cd terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
 
-          # Initialize and Apply Terraform
+      - name: Terraform Apply
+        id: terraform_apply
+        run: |
           terraform init
           terraform apply -auto-approve
+          terraform output -json > terraform-output.json
+        working-directory: terraform
 
-          # Capture the public and private IPs from Terraform output
+      - name: Debug Terraform Output File
+        run: |
+          cat terraform/terraform-output.json
+      
+      - name: Parse Terraform Outputs and Update Hosts File
+        run: |
+          # Define the file path
+          HOSTS_FILE=ansible/hosts.ini
+      
+          # Extract IPs directly from Terraform
           AGENT_PUBLIC_IP=$(terraform output -raw agent_public_ip)
-          AGENT_PRIVATE_IP=$(terraform output -raw agent_private_ip)
           PROMETHEUS_PUBLIC_IP=$(terraform output -raw prometheus_public_ip)
-
+      
           # Debug outputs
           echo "Agent Public IP: $AGENT_PUBLIC_IP"
-          echo "Agent Private IP (WP DB Host): $AGENT_PRIVATE_IP"
           echo "Prometheus Server IP: $PROMETHEUS_PUBLIC_IP"
+      
+          # Create or overwrite the hosts.ini file using echo
+          echo "[agent]" > $HOSTS_FILE
+          echo "$AGENT_PUBLIC_IP" >> $HOSTS_FILE
+          echo "[prometheus_server]" >> $HOSTS_FILE
+          echo "$PROMETHEUS_PUBLIC_IP" >> $HOSTS_FILE
+          echo "[all:vars]" >> $HOSTS_FILE
+          echo "ansible_user=ubuntu" >> $HOSTS_FILE
+          working-directory: terraform
+        
 
-          # Export values for later steps
-          echo "AGENT_PUBLIC_IP=$AGENT_PUBLIC_IP" >> $GITHUB_ENV
-          echo "AGENT_PRIVATE_IP=$AGENT_PRIVATE_IP" >> $GITHUB_ENV
-          echo "PROMETHEUS_PUBLIC_IP=$PROMETHEUS_PUBLIC_IP" >> $GITHUB_ENV
-
-      # Step 4: Update Ansible Hosts
-      - name: Update Ansible Hosts and Vars
-        run: |
-          # Define paths
-          HOSTS_FILE=ansible/hosts.ini
-          VARS_FILE=ansible/vars.yml
-
-          # Dynamically add agent and prometheus_server to hosts.ini
-          if ! grep -q '\[agent\]' $HOSTS_FILE; then
-            echo -e "\n[agent]" >> $HOSTS_FILE
-            echo "${{ env.AGENT_PUBLIC_IP }}" >> $HOSTS_FILE
-          fi
-
-          if ! grep -q '\[prometheus_server\]' $HOSTS_FILE; then
-            echo -e "\n[prometheus_server]" >> $HOSTS_FILE
-            echo "${{ env.PROMETHEUS_PUBLIC_IP }}" >> $HOSTS_FILE
-          fi
-
-          # Update vars.yml dynamically
-          sed -i "1s/.*/agent: ${{ env.AGENT_PUBLIC_IP }}/" $VARS_FILE
-          sed -i "2s/.*/prometheus_server: ${{ env.PROMETHEUS_PUBLIC_IP }}/" $VARS_FILE
-
-      # Step 5: Add SSH Key
       - name: Add SSH Key
         run: |
+          # Write the SSH private key from the GitHub Secret to the `ssh_key.pem` file
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
           chmod 600 ansible/ssh_key.pem
+        shell: bash
 
-      # Step 6: Run Ansible Playbooks
+      - name: Debug Hosts File
+        run: cat ansible/hosts.ini
+      
       - name: Run Ansible Playbook - Agent
         run: |
           ansible-playbook -i ansible/hosts.ini ansible/agent_play.yml --private-key ansible/ssh_key.pem
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      - name: Run Ansible Playbook - Prometheus
-        run: |
-          ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
+      # - name: Run Ansible Playbook - Prometheus
+      #   run: |
+      #     ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
+      #   env:
+      #     ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      # Step 7: Destroy Terraform Resources (Optional)
       - name: Destroy Terraform Resources
-        if: always()
+        if: always() # Ensure this runs regardless of the job's success or failure
         run: |
-          cd terraform
           terraform destroy -auto-approve
+        working-directory: terraform
