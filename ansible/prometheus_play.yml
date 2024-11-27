@@ -1,0 +1,12 @@
+
+- hosts: prometheus_server
+  vars_files:
+    - ./vars.yml
+  gather_facts: yes
+  become: yes
+  roles:
+    - 3.monitoring/1.prometheus
+    - 3.monitoring/2.grafana
+    - 3.monitoring/3.node_exporter
+    - 3.monitoring/4.alert_manager
+    - 3.monitoring/5.iptables

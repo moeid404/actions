@@ -1,0 +1,7 @@
+- hosts: agent
+  vars_files:
+    - ./vars.yml
+  gather_facts: yes
+  become: yes
+  roles:
+    - 1.provisioning

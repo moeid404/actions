@@ -1,17 +1,18 @@
-name: CD Pipeline
+name: Terraform and Ansible Deployment
 
 on:
-  push:
-    branches:
-      - master
-      - workflow_dispatch
+  workflow_run:
+    workflows:
+      - CI Pipeline
+    types:
+      - completed
 
 jobs:
-  terraform-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
@@ -20,14 +21,57 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.0
 
-      - name: Run Terraform Commands
+      - name: Terraform Apply
         run: |
-          terraform destroy --auto-approve
+          terraform init
+          terraform apply -auto-approve
+          terraform output -json > terraform-output.json
         working-directory: terraform
+
+      - name: Update Ansible Hosts File
+        run: |
+          # Parse Terraform outputs
+          AGENT_IP=$(jq -r '.agent_public_ip.value' terraform/terraform-output.json)
+          PROMETHEUS_IP=$(jq -r '.prometheus_public_ip.value' terraform/terraform-output.json)
+
+          # Debug outputs
+          echo "Agent IP: $AGENT_IP"
+          echo "Prometheus IP: $PROMETHEUS_IP"
+
+          # Update hosts.ini dynamically
+          cat <<EOT > ansible/hosts.ini
+[agent]
+$AGENT_IP
+
+[prometheus_server]
+$PROMETHEUS_IP
+
+[all:vars]
+ansible_user=ubuntu
+EOT
+        shell: bash
+
+      - name: Add SSH Key
+        run: |
+          # Write the SSH private key from the GitHub Secret to the `ssh_key.pem` file
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
+          chmod 600 ansible/ssh_key.pem
+        shell: bash
+
+      - name: Run Ansible Playbook - Agent
+        run: |
+          ansible-playbook -i ansible/hosts.ini ansible/agent_play.yml --private-key ansible/ssh_key.pem
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+
+      - name: Run Ansible Playbook - Prometheus
+        run: |
+          ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
