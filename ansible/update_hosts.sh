@@ -7,8 +7,8 @@ if ! command -v jq &>/dev/null; then
 fi
 
 # Define file paths
-TERRAFORM_OUTPUT="terraform/terraform-output.json"
-HOSTS_FILE="ansible/hosts.ini"
+TERRAFORM_OUTPUT="../terraform/terraform-output.json"
+HOSTS_FILE="./hosts.ini"
 
 # Extract IPs using jq
 AGENT_PUBLIC_IP=$(jq -r '.agent_public_ip.value' "$TERRAFORM_OUTPUT")

@@ -40,9 +40,10 @@ jobs:
           terraform apply -auto-approve
           terraform output -json > terraform-output.json
         working-directory: terraform
-        
+
       - name: Update Hosts File
         run: |
+          cd ansible
           chmod +x update_hosts.sh
           ./update_hosts.sh
 
