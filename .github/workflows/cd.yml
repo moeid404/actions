@@ -29,6 +29,7 @@ jobs:
           terraform_version: 1.5.0
 
       - name: Terraform Apply
+        id: terraform_apply
         run: |
           terraform init
           terraform apply -auto-approve
@@ -39,22 +40,22 @@ jobs:
         run: |
           cat terraform/terraform-output.json
       
-      - name: Parse Terraform Outputs with Bash
+      - name: Parse Terraform Outputs Without JSON File
         run: |
-          # Read JSON and extract values
-          AGENT_IP=$(grep -oP '"agent_public_ip":\s*{\s*"sensitive":\s*false,\s*"type":\s*"string",\s*"value":\s*"\K[^\"]+' terraform/terraform-output.json)
-          PROMETHEUS_IP=$(grep -oP '"prometheus_public_ip":\s*{\s*"sensitive":\s*false,\s*"type":\s*"string",\s*"value":\s*"\K[^\"]+' terraform/terraform-output.json)
-
+          # Extract values directly using Terraform output commands
+          AGENT_IP=$(terraform output -raw agent_public_ip)
+          PROMETHEUS_IP=$(terraform output -raw prometheus_public_ip)
+      
           # Debug outputs
           echo "Agent IP: $AGENT_IP"
           echo "Prometheus IP: $PROMETHEUS_IP"
-
+      
           # Check for parsing errors
           if [ -z "$AGENT_IP" ] || [ -z "$PROMETHEUS_IP" ]; then
             echo "Error: Unable to parse IP addresses from Terraform output"
             exit 1
           fi
-
+      
           # Update hosts.ini dynamically
           echo "[agent]" > ansible/hosts.ini
           echo "$AGENT_IP" >> ansible/hosts.ini
@@ -64,7 +65,8 @@ jobs:
           echo "" >> ansible/hosts.ini
           echo "[all:vars]" >> ansible/hosts.ini
           echo "ansible_user=ubuntu" >> ansible/hosts.ini
-
+        working-directory: terraform
+        
 
       - name: Add SSH Key
         run: |
@@ -84,3 +86,9 @@ jobs:
           ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
+
+      - name: Destroy Terraform Resources
+        if: failure() # Ensure this runs regardless of the job's success or failure
+        run: |
+          terraform destroy -auto-approve
+        working-directory: terraform
