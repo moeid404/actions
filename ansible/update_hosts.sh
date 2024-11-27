@@ -10,9 +10,19 @@ fi
 TERRAFORM_OUTPUT="../terraform/terraform-output.json"
 HOSTS_FILE="./hosts.ini"
 
+# Check if the Terraform output file exists
+if [[ ! -f "$TERRAFORM_OUTPUT" ]]; then
+  echo "Error: Terraform output file not found at $TERRAFORM_OUTPUT"
+  exit 1
+fi
+
+# Debug: Print the Terraform output file content
+echo "Terraform output JSON file content:"
+cat "$TERRAFORM_OUTPUT"
+
 # Extract IPs using jq
-AGENT_PUBLIC_IP=$(jq -r '.agent_public_ip.value' "$TERRAFORM_OUTPUT")
-PROMETHEUS_PUBLIC_IP=$(jq -r '.prometheus_public_ip.value' "$TERRAFORM_OUTPUT")
+AGENT_PUBLIC_IP=$(jq -r '.agent_public_ip.value' "$TERRAFORM_OUTPUT" 2>/dev/null)
+PROMETHEUS_PUBLIC_IP=$(jq -r '.prometheus_public_ip.value' "$TERRAFORM_OUTPUT" 2>/dev/null)
 
 # Check for errors in IP extraction
 if [[ -z "$AGENT_PUBLIC_IP" || -z "$PROMETHEUS_PUBLIC_IP" ]]; then

@@ -41,11 +41,13 @@ jobs:
           terraform output -json > terraform-output.json
         working-directory: terraform
 
-      - name: Update Hosts File
+      - name: Run the Script to Update Hosts File
         run: |
           cd ansible
+          cat ../terraform/terraform-output.json  # Debug: Print the JSON file content
           chmod +x update_hosts.sh
           ./update_hosts.sh
+      
 
       - name: Add SSH Key
         run: |
