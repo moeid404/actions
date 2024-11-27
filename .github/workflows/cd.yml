@@ -1,11 +1,9 @@
 name: CD Pipeline
 
 on:
-  workflow_run:
-    workflows:
-      - CI Pipeline
-    types:
-      - completed
+  push:
+    branches:
+      - master
 
 jobs:
   deploy:
@@ -42,6 +40,9 @@ jobs:
       
       - name: Parse Terraform Outputs Without JSON File
         run: |
+          # Define the path to the hosts.ini file
+          HOSTS_FILE=/home/runner/work/actions/actions/ansible/hosts.ini
+
           # Extract values directly using Terraform output commands
           AGENT_IP=$(terraform output -raw agent_public_ip)
           PROMETHEUS_IP=$(terraform output -raw prometheus_public_ip)
@@ -57,14 +58,14 @@ jobs:
           fi
       
           # Update ansible/hosts.ini dynamically
-          echo "[agent]" > ../ansible/hosts.ini
-          echo "$AGENT_IP" >> ../ansible/hosts.ini
-          echo "" >> ../ansible/hosts.ini
-          echo "[prometheus_server]" >> ../ansible/hosts.ini
-          echo "$PROMETHEUS_IP" >> ../ansible/hosts.ini
-          echo "" >> ../ansible/hosts.ini
-          echo "[all:vars]" >> ../ansible/hosts.ini
-          echo "ansible_user=ubuntu" >> ../ansible/hosts.ini
+          echo "[agent]" > $HOSTS_FILE
+          echo "$AGENT_IP" >> $HOSTS_FILE
+          echo "" >> $HOSTS_FILE
+          echo "[prometheus_server]" >> $HOSTS_FILE
+          echo "$PROMETHEUS_IP" >> $HOSTS_FILE
+          echo "" >> $HOSTS_FILE
+          echo "[all:vars]" >> $HOSTS_FILE
+          echo "ansible_user=ubuntu" >> $HOSTS_FILE
         working-directory: terraform
 
       - name: Add SSH Key
@@ -75,22 +76,26 @@ jobs:
         shell: bash
 
       - name: Debug Hosts File
-        run: cat ansible/hosts.ini
+        run: |
+          HOSTS_FILE=/home/runner/work/actions/actions/ansible/hosts.ini
+          cat $HOSTS_FILE
       
       - name: Run Ansible Playbook - Agent
         run: |
-          ansible-playbook -i ansible/hosts.ini ansible/agent_play.yml --private-key ansible/ssh_key.pem
+          HOSTS_FILE=/home/runner/work/actions/actions/ansible/hosts.ini
+          ansible-playbook -i $HOSTS_FILE ansible/agent_play.yml --private-key ansible/ssh_key.pem
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
-
-      # - name: Run Ansible Playbook - Prometheus
-      #   run: |
-      #     ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
-      #   env:
-      #     ANSIBLE_HOST_KEY_CHECKING: "False"
 
       - name: Destroy Terraform Resources
         if: always() # Ensure this runs regardless of the job's success or failure
         run: |
           terraform destroy -auto-approve
         working-directory: terraform
+
+
+      # - name: Run Ansible Playbook - Prometheus
+      #   run: |
+      #     ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
+      #   env:
+      #     ANSIBLE_HOST_KEY_CHECKING: "False"
