@@ -33,20 +33,19 @@ jobs:
         with:
           terraform_version: 1.5.0
 
-      - name: Terraform Apply
-        id: terraform_apply
+      - name: Terraform Apply and Capture Output
         run: |
+          cd terraform
           terraform init
           terraform apply -auto-approve
           terraform output -json > terraform-output.json
-        working-directory: terraform
-
-      - name: Run the Script to Update Hosts File
+        
+      - name: Update Hosts File
         run: |
           cd ansible
-          cat ../terraform/terraform-output.json  # Debug: Print the JSON file content
           chmod +x update_hosts.sh
           ./update_hosts.sh
+        
       
 
       - name: Add SSH Key
