@@ -1,4 +1,4 @@
-name: Terraform and Ansible Deployment
+name: CD Pipeline
 
 on:
   workflow_run:
@@ -46,17 +46,14 @@ jobs:
           echo "Prometheus IP: $PROMETHEUS_IP"
 
           # Update hosts.ini dynamically
-          cat <<EOT > ansible/hosts.ini
-[agent]
-$AGENT_IP
-
-[prometheus_server]
-$PROMETHEUS_IP
-
-[all:vars]
-ansible_user=ubuntu
-EOT
-        shell: bash
+          echo "[agent]" > ansible/hosts.ini
+          echo "$AGENT_IP" >> ansible/hosts.ini
+          echo "" >> ansible/hosts.ini
+          echo "[prometheus_server]" >> ansible/hosts.ini
+          echo "$PROMETHEUS_IP" >> ansible/hosts.ini
+          echo "" >> ansible/hosts.ini
+          echo "[all:vars]" >> ansible/hosts.ini
+          echo "ansible_user=ubuntu" >> ansible/hosts.ini
 
       - name: Add SSH Key
         run: |
