@@ -66,39 +66,22 @@
     state: directory
     mode: '0755'
 
-- name: Copy deployment.yml to the remote server
+- name: Copy Kubernetes manifests to the remote server
   copy:
-    src: deployment.yml
-    dest: /opt/k8s-manifests/deployment.yml
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { src: "deployment.yml", dest: "/opt/k8s-manifests/deployment.yml" }
+    - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
+    - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
 
-- name: Copy service.yml to the remote server
-  copy:
-    src: service.yml
-    dest: /opt/k8s-manifests/service.yml
+- name: Apply Kubernetes manifests
+  command: "sudo kubectl apply -f {{ item }}"
+  loop:
+    - /opt/k8s-manifests/deployment.yml
+    - /opt/k8s-manifests/service.yml
+    - /opt/k8s-manifests/ingress.yml
 
-- name: Copy ingress.yml to the remote server
-  copy:
-    src: ingress.yml
-    dest: /opt/k8s-manifests/ingress.yml
 
-- name: Wait for ingress controller pods to be running
-  shell: kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/name=ingress-nginx --timeout=300s
-  register: ingress_status
-  failed_when: "'condition met' not in ingress_status.stdout"
-
-- name: Wait for NGINX admission webhook service to be ready
-  shell: kubectl wait --namespace ingress-nginx --for=condition=available deployment/ingress-nginx-controller --timeout=300s
-  register: webhook_status
-  failed_when: "'condition met' not in webhook_status.stdout"
-
-- name: Apply service.yml
-  shell: kubectl apply -f /opt/k8s-manifests/service.yml
-
-- name: Apply ingress.yml
-  shell: kubectl apply -f /opt/k8s-manifests/ingress.yml
-  register: ingress_apply
-  retries: 5
-  delay: 15
-  until: ingress_apply.rc == 0
 
 

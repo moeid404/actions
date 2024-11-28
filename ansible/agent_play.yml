@@ -5,6 +5,6 @@
   become: yes
   roles:
     - 1.provisioning
-    # - 2.remote_user
+    - 2.remote_user
     - 3.ssh_conf
     - 4.k8s

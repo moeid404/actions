@@ -2,14 +2,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: node-app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" # Disable SSL redirect
 spec:
   ingressClassName: nginx
-  tls:
-  - hosts:
-    - nodeapp.com
-    secretName: nodeapp-tls # TLS secret for SSL
   rules:
-  - host: nodeapp.com
+  - host: "" # Match any host
     http:
       paths:
       - path: /
@@ -18,4 +16,4 @@ spec:
           service:
             name: node-app-service
             port:
-              number: 80
+              number: 3000
