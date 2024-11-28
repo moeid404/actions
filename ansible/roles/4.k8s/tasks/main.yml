@@ -50,15 +50,15 @@
     executable: /bin/bash
   become: yes
 ######################################################
-- name: Create SSL Secret
-  script: SSL.sh
+# - name: Create SSL Secret
+#   script: SSL.sh
 
-- name: Add app entry to /etc/hosts
-  lineinfile:
-    path: /etc/hosts
-    line: "127.0.0.1    nodeapp.com"
-    state: present
-    backup: yes
+# - name: Add app entry to /etc/hosts
+#   lineinfile:
+#     path: /etc/hosts
+#     line: "127.0.0.1    nodeapp.com"
+#     state: present
+#     backup: yes
 
 - name: Create a working directory for Kubernetes manifests
   file:
@@ -80,7 +80,7 @@
   loop:
     - /opt/k8s-manifests/deployment.yml
     - /opt/k8s-manifests/service.yml
-    - /opt/k8s-manifests/ingress.yml
+    - /opt/k8s-manifests/ingress.yml --validate=false
 
 
 
