@@ -1,6 +1,6 @@
 import globals from 'globals';
 
-/** @type {import('eslint').Linter.FlatConfig[]} */
+/** @type {import('eslint').Linter.ConfigArray} */
 export default [
   {
     files: ['**/*.js'],
@@ -10,7 +10,7 @@ export default [
       globals: globals.node,
     },
     rules: {
-      'no-console': 'off', // Adjust rules as needed
+      'no-console': 'warn', // Warn on console.log usage
     },
   },
 ];
