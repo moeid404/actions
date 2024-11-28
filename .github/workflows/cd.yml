@@ -81,8 +81,8 @@ jobs:
       #   env:
       #     ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      - name: Destroy Terraform Resources
-        if: always()
-        run: |
-          terraform destroy -auto-approve
-        working-directory: terraform
+      # - name: Destroy Terraform Resources
+      #   if: always()
+      #   run: |
+      #     terraform destroy -auto-approve
+      #   working-directory: terraform
