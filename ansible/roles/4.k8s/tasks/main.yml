@@ -82,16 +82,12 @@
     dest: /opt/k8s-manifests/ingress.yml
 
 - name: Apply deployment.yml
-  command: kubectl apply -f /opt/k8s-manifests/deployment.yml
-  args:
-    warn: false
+  shell: kubectl apply -f /opt/k8s-manifests/deployment.yml
+
 
 - name: Apply service.yml
-  command: kubectl apply -f /opt/k8s-manifests/service.yml
-  args:
-    warn: false
+  shell: kubectl apply -f /opt/k8s-manifests/service.yml
+
 
 - name: Apply ingress.yml
-  command: kubectl apply -f /opt/k8s-manifests/ingress.yml
-  args:
-    warn: false
+  shell: kubectl apply -f /opt/k8s-manifests/ingress.yml
