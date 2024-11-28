@@ -1,4 +1,4 @@
-resource "aws_security_group" "agent_sg" {
+resource "aws_security_group" "agent_sgg" {
   name        = "agent_sg"
   description = "Allow inbound traffic for Agent"
 
