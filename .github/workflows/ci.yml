@@ -55,7 +55,6 @@ jobs:
           else
             echo "Process $APP_PID not found"
           fi
-      
         working-directory: src
 
       - name: Log in to Docker Hub
