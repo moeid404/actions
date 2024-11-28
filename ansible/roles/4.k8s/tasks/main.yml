@@ -86,18 +86,19 @@
   register: ingress_status
   failed_when: "'condition met' not in ingress_status.stdout"
 
-- name: Apply ingress.yml
-  shell: kubectl apply -f /opt/k8s-manifests/ingress.yml
-  register: ingress_apply
-  failed_when: ingress_apply.rc != 0
-  retries: 3
-  delay: 10
-
-
+- name: Wait for NGINX admission webhook service to be ready
+  shell: kubectl wait --namespace ingress-nginx --for=condition=available deployment/ingress-nginx-controller --timeout=300s
+  register: webhook_status
+  failed_when: "'condition met' not in webhook_status.stdout"
 
 - name: Apply service.yml
   shell: kubectl apply -f /opt/k8s-manifests/service.yml
 
-
 - name: Apply ingress.yml
   shell: kubectl apply -f /opt/k8s-manifests/ingress.yml
+  register: ingress_apply
+  retries: 5
+  delay: 15
+  until: ingress_apply.rc == 0
+
+
