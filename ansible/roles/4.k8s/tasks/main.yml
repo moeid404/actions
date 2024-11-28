@@ -81,8 +81,18 @@
     src: ingress.yml
     dest: /opt/k8s-manifests/ingress.yml
 
-- name: Apply deployment.yml
-  shell: kubectl apply -f /opt/k8s-manifests/deployment.yml
+- name: Wait for ingress controller pods to be running
+  shell: kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/name=ingress-nginx --timeout=300s
+  register: ingress_status
+  failed_when: "'condition met' not in ingress_status.stdout"
+
+- name: Apply ingress.yml
+  shell: kubectl apply -f /opt/k8s-manifests/ingress.yml
+  register: ingress_apply
+  failed_when: ingress_apply.rc != 0
+  retries: 3
+  delay: 10
+
 
 
 - name: Apply service.yml
