@@ -1,3 +1,9 @@
+- name: Install kubectl
+  script: kubectl.sh
+
+- name: Install Kind
+  script: kind.sh
+
 - name: Create King Cluster With Nginx Ingress Controller
   script: KindCluster-with-ingress.sh
 
