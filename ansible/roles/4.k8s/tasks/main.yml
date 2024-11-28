@@ -76,11 +76,14 @@
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
 
 - name: Apply Kubernetes manifests
-  command: "sudo kubectl apply -f {{ item }}"
+  command: "sudo kubectl apply -f {{ item }} {{ '--validate=false' if 'ingress.yml' in item else '' }}"
   loop:
     - /opt/k8s-manifests/deployment.yml
     - /opt/k8s-manifests/service.yml
-    - /opt/k8s-manifests/ingress.yml --validate=false
+    - /opt/k8s-manifests/ingress.yml
+  register: kubectl_output
+  failed_when: kubectl_output.rc != 0
+
 
 
 
