@@ -39,12 +39,23 @@ jobs:
 
       - name: Validate Application Endpoints
         run: |
-          npm start &
-          APP_PID=$!  # Store process ID
-          sleep 5
+          npm start & # Start the application
+          APP_PID=$!  # Store the process ID
+          sleep 5     # Allow time for the app to initialize
+      
+          # Validate health check endpoint
           curl -f http://localhost:3000/health | grep "UP"
+      
+          # Validate Prometheus metrics endpoint
           curl -f http://localhost:3000/metrics | grep "# HELP"
-          kill $APP_PID  # Stop the process
+      
+          # Stop the application
+          if ps -p $APP_PID > /dev/null; then
+            kill $APP_PID
+          else
+            echo "Process $APP_PID not found"
+          fi
+      
         working-directory: src
 
       - name: Log in to Docker Hub
