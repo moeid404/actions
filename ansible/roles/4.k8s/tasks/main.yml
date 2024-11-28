@@ -75,6 +75,14 @@
     - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
 
+- name: Ensure Ingress Controller is ready
+  shell: |
+    kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx
+  register: ingress_controller_status
+  until: ingress_controller_status.stdout.find("successfully rolled out") != -1
+  retries: 5
+  delay: 10
+
 - name: Apply Kubernetes manifests
   command: "sudo kubectl apply -f {{ item }} {{ '--validate=false' if 'ingress.yml' in item else '' }}"
   loop:
@@ -82,7 +90,10 @@
     - /opt/k8s-manifests/service.yml
     - /opt/k8s-manifests/ingress.yml
   register: kubectl_output
+  retries: 3
+  delay: 10
   failed_when: kubectl_output.rc != 0
+
 
 
 
