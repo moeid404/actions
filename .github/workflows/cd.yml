@@ -6,6 +6,7 @@ on:
       - CI Pipeline  # Name of your CI workflow
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   deploy:

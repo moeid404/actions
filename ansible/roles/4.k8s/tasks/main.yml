@@ -4,8 +4,52 @@
 - name: Install Kind
   script: kind.sh
 
-- name: Create King Cluster With Nginx Ingress Controller
-  script: KindCluster-with-ingress.sh
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+  become: yes
+
+- name: Ensure Docker is started and enabled
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Install kind
+  get_url:
+    url: "https://kind.sigs.k8s.io/dl/v0.25.0/kind-linux-amd64"
+    dest: /usr/local/bin/kind
+    mode: '0755'
+  become: yes
+
+- name: Create Kind cluster with Ingress Controller
+  shell: |
+    cat <<EOF | kind create cluster --config=-
+    kind: Cluster
+    apiVersion: kind.x-k8s.io/v1alpha4
+    nodes:
+    - role: control-plane
+      kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+      extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+    EOF
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+  args:
+    executable: /bin/bash
+  become: yes
+
 
 - name: Create SSL Secret
   script: SSL.sh
