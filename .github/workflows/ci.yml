@@ -2,9 +2,8 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
-
 
 jobs:
   build-test:
@@ -24,16 +23,30 @@ jobs:
           cd src
           npm install
 
-      - name: Start Applicationn
+      # Linting: Ensures the code is written cleanly and consistently.
+      - name: Run Linter
+        run: |
+          cd src
+          npm run lint
+
+      - name: Run Unit Tests
+        run: |
+          cd src/test
+          npm test
+
+      - name: Start Application
         run: |
           cd src
           npm start &
-          sleep 2  # Give the app time to start
+          sleep 3
 
-      - name: Run Health Check
+      - name: Validate Health Check
         run: |
-          curl http://localhost:3000
-          curl http://localhost:3000/health
+          curl -f http://localhost:3000/health | grep "UP"
+
+      - name: Validate Metrics Endpoint
+        run: |
+          curl -f http://localhost:3000/metrics | grep "# HELP"
 
       - name: Log in to Docker Hub
         if: ${{ success() }}

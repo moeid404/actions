@@ -75,6 +75,9 @@
     - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
 
+# Purpose: Checks if the Ingress Controller deployment is fully initialized and ready to handle ingress resources.
+# Runs kubectl rollout status to monitor the rollout of the deployment.
+# Looks for the phrase "successfully rolled out" in the command output to confirm readiness.
 - name: Ensure Ingress Controller is ready
   shell: |
     kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx

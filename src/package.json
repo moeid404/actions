@@ -3,10 +3,12 @@
     "version": "1.0.0",
     "description": "A simple Node.js application for deployment and testing.",
     "main": "App.js",
-    "scripts": {
-        "start": "node App.js",
-        "test": "echo \"No tests defined\" && exit 0"
-    },
+"scripts": {
+  "start": "node src/app.js",
+  "lint": "eslint .",
+  "test": "jest"
+}
+,
     "dependencies": {
         "dotenv": "^16.0.3",
         "express": "^4.18.2"
