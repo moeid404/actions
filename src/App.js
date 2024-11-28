@@ -1,6 +1,7 @@
-const express = require('express');
-const morgan = require('morgan');
-const client = require('prom-client');
+import express from 'express';
+import morgan from 'morgan';
+import client from 'prom-client';
+
 const app = express();
 
 // Middleware for logging HTTP requests
@@ -36,8 +37,9 @@ app.get('/metrics', async (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-module.exports = app; // Export app for testing
+// Export both app and server for testing
+export { app, server };

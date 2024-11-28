@@ -1,7 +1,12 @@
-const request = require('supertest');
-const app = require('../src/app'); // Adjust the path based on your directory structure
+import request from 'supertest';
+import { app, server } from './App.js'; // Import both app and server
 
 describe('Application Endpoints', () => {
+    // Close the server after all tests
+    afterAll(() => {
+        server.close();
+    });
+
     it('should return Hello, World!', async () => {
         const res = await request(app).get('/');
         expect(res.statusCode).toEqual(200);

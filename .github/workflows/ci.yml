@@ -19,34 +19,27 @@ jobs:
           node-version: '16'
 
       - name: Install Dependencies
-        run: |
-          cd src
-          npm install
+        run: npm install
 
-      # Linting: Ensures the code is written cleanly and consistently.
       - name: Run Linter
-        run: |
-          cd src
-          npm run lint
+        run: npx eslint .
 
       - name: Run Unit Tests
-        run: |
-          cd src/test
-          npm test
+        run: npm test
 
       - name: Start Application
         run: |
-          cd src
           npm start &
-          sleep 3
+          sleep 5  # Allow time for the app to fully initialize
 
-      - name: Validate Health Check
+      - name: Validate Application Endpoints
         run: |
+          npm start &
+          APP_PID=$!  # Store process ID
+          sleep 5
           curl -f http://localhost:3000/health | grep "UP"
-
-      - name: Validate Metrics Endpoint
-        run: |
           curl -f http://localhost:3000/metrics | grep "# HELP"
+          kill $APP_PID  # Stop the process
 
       - name: Log in to Docker Hub
         if: ${{ success() }}
