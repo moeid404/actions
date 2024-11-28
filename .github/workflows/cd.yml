@@ -67,7 +67,7 @@ jobs:
         run: cat ansible/hosts.ini
 
       - name: Wait for Instances to Initialize
-        run: sleep 60  # Adjust the sleep duration based on instance initialization time
+        run: sleep 30  # Adjust the sleep duration based on instance initialization time
 
       - name: Run Ansible Playbook - Agent
         run: |

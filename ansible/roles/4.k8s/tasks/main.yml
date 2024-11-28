@@ -3,7 +3,7 @@
 
 - name: Install Kind
   script: kind.sh
-
+######################################################
 - name: Install Docker
   apt:
     name: docker.io
@@ -16,7 +16,7 @@
     state: started
     enabled: yes
   become: yes
-
+######################################################
 - name: Install kind
   get_url:
     url: "https://kind.sigs.k8s.io/dl/v0.25.0/kind-linux-amd64"
@@ -49,8 +49,7 @@
   args:
     executable: /bin/bash
   become: yes
-
-
+######################################################
 - name: Create SSL Secret
   script: SSL.sh
 
