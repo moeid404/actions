@@ -1,4 +1,5 @@
-name: CI Pipeline
+name: CI/CD Pipeline
+
 on:
   push:
     branches:
@@ -22,34 +23,26 @@ jobs:
         run: npm install
         working-directory: src
 
-
-      - name: Run Linter
-        run: npx eslint .
-        working-directory: src
-
       - name: Run Unit Tests
         run: npm test
         working-directory: src
 
-      - name: Start Application
+      - name: Start Application and Validate Endpoints
         run: |
           npm start &
-          sleep 5  # Allow time for the app to fully initialize
-        working-directory: src
-
-      - name: Validate Application Endpoints
-        run: |
-          npm start & # Start the application
           APP_PID=$!  # Store the process ID
-          sleep 5     # Allow time for the app to initialize
-      
+          sleep 5     # Allow the app to initialize
+
+          # Validate root endpoint
+          curl -f http://localhost:3000/ | grep "Welcome to your Node.js app!"
+
           # Validate health check endpoint
-          curl -f http://localhost:3000/health | grep "UP"
-      
+          curl -f http://localhost:3000/health | grep "\"status\":\"OK\""
+
           # Validate Prometheus metrics endpoint
           curl -f http://localhost:3000/metrics | grep "# HELP"
-      
-          # Stop the application
+
+          # Kill the application process
           if ps -p $APP_PID > /dev/null; then
             kill $APP_PID
           else

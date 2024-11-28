@@ -1,27 +1,28 @@
-import request from 'supertest';
-import { app, server } from './App.js'; // Import both app and server
+const request = require('supertest');
+const { app, server } = require('./app');
 
-describe('Application Endpoints', () => {
-    // Close the server after all tests
+describe('Node.js App Tests', () => {
     afterAll(() => {
+        // Close the server after tests
         server.close();
     });
 
-    it('should return Hello, World!', async () => {
-        const res = await request(app).get('/');
-        expect(res.statusCode).toEqual(200);
-        expect(res.text).toContain('Hello, World!');
-    });
-
-    it('should return UP status for health check', async () => {
+    it('Health check should return status OK', async () => {
         const res = await request(app).get('/health');
-        expect(res.statusCode).toEqual(200);
-        expect(res.body.status).toBe('UP');
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('OK');
+        expect(res.body.dbConnection).toBe(true);
     });
 
-    it('should return Prometheus metrics', async () => {
+    it('Metrics endpoint should return Prometheus metrics', async () => {
         const res = await request(app).get('/metrics');
-        expect(res.statusCode).toEqual(200);
-        expect(res.text).toContain('# HELP');
+        expect(res.statusCode).toBe(200);
+        expect(res.headers['content-type']).toContain('text/plain');
+    });
+
+    it('Root endpoint should return Welcome message', async () => {
+        const res = await request(app).get('/');
+        expect(res.statusCode).toBe(200);
+        expect(res.text).toBe('Welcome to your Node.js app!');
     });
 });
