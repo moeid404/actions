@@ -10,7 +10,7 @@ export default [
       globals: globals.node,
     },
     rules: {
-      'no-console': 'off',
+      'no-console': 'off', // Adjust rules as needed
     },
   },
 ];
