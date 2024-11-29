@@ -2,6 +2,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: node-app-service
+  annotations:
+    prometheus.io/scrape: "true" # Enable Prometheus scraping
+    prometheus.io/path: "/metrics" # Path to metrics endpoint
+    prometheus.io/port: "3000" # Target port for scraping
 spec:
   type: ClusterIP
   ports:

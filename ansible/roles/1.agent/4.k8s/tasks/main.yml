@@ -50,15 +50,6 @@
     executable: /bin/bash
   become: yes
 ######################################################
-# - name: Create SSL Secret
-#   script: SSL.sh
-
-# - name: Add app entry to /etc/hosts
-#   lineinfile:
-#     path: /etc/hosts
-#     line: "127.0.0.1    nodeapp.com"
-#     state: present
-#     backup: yes
 
 - name: Create a working directory for Kubernetes manifests
   file:
@@ -97,8 +88,57 @@
   delay: 10
   failed_when: kubectl_output.rc != 0
 
+- name: Create Service Account and Role for Prometheus
+  block:
+    - name: Create Prometheus Service Account YAML
+      copy:
+        dest: /opt/k8s-manifests/prometheus-service-account.yaml
+        content: |
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: prometheus
+            namespace: default
+          ---
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            name: prometheus
+          rules:
+            - apiGroups: [""]
+              resources: ["nodes", "services", "endpoints", "pods"]
+              verbs: ["get", "list", "watch"]
+            - apiGroups: [""]
+              resources: ["configmaps"]
+              verbs: ["get"]
+            - apiGroups: ["extensions"]
+              resources: ["ingresses"]
+              verbs: ["get", "list", "watch"]
+          ---
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: prometheus
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: prometheus
+          subjects:
+            - kind: ServiceAccount
+              name: prometheus
+              namespace: default
 
+    - name: Apply Prometheus Service Account YAML
+      shell: kubectl apply -f /opt/k8s-manifests/prometheus-service-account.yaml
+      args:
+        executable: /bin/bash
 
+- name: Retrieve Prometheus Service Account Secret Name
+  shell: |
+    kubectl get serviceaccount prometheus -n default -o jsonpath='{.secrets[0].name}'
+  register: prometheus_secret_name
 
-
-
+- name: Get Prometheus Service Account Token
+  shell: |
+    kubectl get secret {{ prometheus_secret_name.stdout }} -n default -o jsonpath='{.data.token}' | base64 --decode
+  register: prometheus_token
