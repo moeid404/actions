@@ -65,7 +65,8 @@ jobs:
           # Backup existing vars.yml
           cp ansible/vars.yml ansible/vars.yml.bak || true
       
-          # Append new variables to vars.yml
+          # Ensure newline before appending new variables to vars.yml
+          echo "" >> ansible/vars.yml
           echo "agent: $agent_ip" >> ansible/vars.yml
           echo "prometheus_server: $prometheus_ip" >> ansible/vars.yml
       
@@ -75,8 +76,7 @@ jobs:
           cat ansible/hosts.ini
           echo "----- vars.yml -----"
           cat ansible/vars.yml
-        
-
+               
       - name: Add SSH Key
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
