@@ -46,36 +46,42 @@ jobs:
 
       - name: Update Ansible Hosts File and vars.yml
         run: |
-          # Clear previous contents
+          # Initialize hosts.ini
           echo "[all:vars]" > ansible/hosts.ini
           echo "ansible_user=ubuntu" >> ansible/hosts.ini
           echo "" >> ansible/hosts.ini
-
-          # Write agent IPs to hosts.ini and vars.yml
+      
+          # Write agent IPs to hosts.ini
           echo "[agent]" >> ansible/hosts.ini
           grep 'agent' ansible/instance_ips.txt | awk '{print $2}' >> ansible/hosts.ini
           agent_ip=$(grep 'agent' ansible/instance_ips.txt | awk '{print $2}')
-          echo "agent: $agent_ip" > ansible/vars.yml
-
-          # Write Prometheus IPs to hosts.ini and vars.yml
+      
+          # Write Prometheus IPs to hosts.ini
           echo "" >> ansible/hosts.ini
           echo "[prometheus_server]" >> ansible/hosts.ini
           grep 'prometheus' ansible/instance_ips.txt | awk '{print $2}' >> ansible/hosts.ini
           prometheus_ip=$(grep 'prometheus' ansible/instance_ips.txt | awk '{print $2}')
+      
+          # Backup existing vars.yml
+          cp ansible/vars.yml ansible/vars.yml.bak || true
+      
+          # Append new variables to vars.yml
+          echo "agent: $agent_ip" >> ansible/vars.yml
           echo "prometheus_server: $prometheus_ip" >> ansible/vars.yml
-
-      - name: Add SSH Key
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
-          chmod 600 ansible/ssh_key.pem
-        shell: bash
-
+      
       - name: Debug Hosts File and vars.yml
         run: |
           echo "----- hosts.ini -----"
           cat ansible/hosts.ini
           echo "----- vars.yml -----"
           cat ansible/vars.yml
+        
+
+      - name: Add SSH Key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
+          chmod 600 ansible/ssh_key.pem
+        shell: bash
 
       - name: Wait for Instances to Initialize
         run: sleep 30  # Adjust the sleep duration based on instance initialization time
