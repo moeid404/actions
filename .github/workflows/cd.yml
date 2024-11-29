@@ -57,14 +57,24 @@ jobs:
           echo "[prometheus]" >> ansible/hosts.ini
           grep 'prometheus' ansible/instance_ips.txt | awk '{print $2}' >> ansible/hosts.ini
 
+      - name: Update vars.yml with Instance IPs
+        run: |
+          echo "agent:" > ansible/vars.yml
+          grep 'agent' ansible/instance_ips.txt | awk '{print "  - " $2}' >> ansible/vars.yml
+          
+          echo "prometheus_server:" >> ansible/vars.yml
+          grep 'prometheus' ansible/instance_ips.txt | awk '{print "  - " $2}' >> ansible/vars.yml
+
       - name: Add SSH Key
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ansible/ssh_key.pem
           chmod 600 ansible/ssh_key.pem
         shell: bash
 
-      - name: Debug Hosts File
-        run: cat ansible/hosts.ini
+      - name: Debug Hosts File and vars.yml
+        run: |
+          cat ansible/hosts.ini
+          cat ansible/vars.yml
 
       - name: Wait for Instances to Initialize
         run: sleep 30  # Adjust the sleep duration based on instance initialization time
@@ -75,15 +85,14 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      # - name: Run Ansible Playbook - Prometheus
-      #   run: |
-      #     ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
-      #   env:
-      #     ANSIBLE_HOST_KEY_CHECKING: "False"
+      - name: Run Ansible Playbook - Prometheus
+        run: |
+          ansible-playbook -i ansible/hosts.ini ansible/prometheus_play.yml --private-key ansible/ssh_key.pem
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
 
       - name: Rollback Deployment
         if: failure()
         run: |
           cd terraform
           terraform destroy -auto-approve
-    

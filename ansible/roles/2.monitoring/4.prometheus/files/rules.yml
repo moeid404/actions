@@ -1,0 +1,21 @@
+groups:
+- name: node-app.rules
+  rules:
+  - alert: NodeAppAvailability
+    expr: kube_deployment_status_replicas_available{deployment="node-app"} < 2
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Node App has less than 2 available replicas"
+      description: "Node-app deployment is running with less than 2 replicas for more than 1 minute."
+
+- name: test-alert.rules
+  rules:
+  - alert: TestAlert
+    expr: vector(1)  # Always fires
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      description: "This is a test alert to verify Slack integration."

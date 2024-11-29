@@ -4,7 +4,8 @@
   gather_facts: yes
   become: yes
   roles:
-    - 1.provisioning
-    - 2.remote_user
-    - 3.ssh_conf
-    - 4.k8s
+    - 1.agent/1.provisioning
+    # - 1.agent/2.remote_user
+    # - 1.agent/3.ssh_conf
+    - 1.agent/4.k8s
+    - 1.agent/5.agent_monitoring
