@@ -142,3 +142,10 @@
   shell: |
     kubectl get secret {{ prometheus_secret_name.stdout }} -n default -o jsonpath='{.data.token}' | base64 --decode
   register: prometheus_token
+
+- name: Append Prometheus Token to vars.yml
+  blockinfile:
+    path: ansible/vars.yml
+    block: |
+      prometheus_token: "{{ prometheus_token.stdout }}"
+    insertafter: EOF

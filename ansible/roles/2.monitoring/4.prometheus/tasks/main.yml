@@ -4,6 +4,10 @@
     dest: /tmp/install_prometheus.sh
     mode: '0755'  # Make the script executable
 
+- name: Include Prometheus token from vars.yml
+  include_vars:
+    file: ansible/vars.yml
+
 - name: Run the Prometheus installation script
   command: /tmp/install_prometheus.sh
 
@@ -26,3 +30,4 @@
     name: prometheus
     state: restarted
     enabled: yes
+

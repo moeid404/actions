@@ -22,9 +22,9 @@ scrape_configs:
   # Kubernetes Service Discovery
   - job_name: 'kubernetes'
     kubernetes_sd_configs:
-      - api_server: "https://{{ prometheus_server }}:6443" # Prometheus server variable
+      - api_server: "https://{{ prometheus_server }}:6443"
         role: service
-        bearer_token: "{{ prometheus_token.stdout }}" # Token retrieved from Ansible
+        bearer_token: "{{ prometheus_token }}"
         tls_config:
           insecure_skip_verify: true
     relabel_configs:
