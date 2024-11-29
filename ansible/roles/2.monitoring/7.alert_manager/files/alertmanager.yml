@@ -10,7 +10,7 @@ route:
 receivers:
 - name: slack-notifications
   slack_configs:
-  - api_url: 'https://hooks.slack.com/services/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'
+  - api_url: 'https://hooks.slack.com/services/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'
     channel: '#project' # Replace with your Slack channel
     send_resolved: true
     title: "{{ .CommonLabels.alertname }}: {{ .CommonLabels.job }}"

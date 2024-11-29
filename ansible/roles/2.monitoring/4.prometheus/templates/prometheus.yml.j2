@@ -28,7 +28,7 @@ scrape_configs:
 
   - job_name: "cadvisor"
     static_configs:
-      - targets: ["{{ agent }}:8080"]
+      - targets: ["{{ agent }}:30080"]
 
   - job_name: 'nodejs-app'
     metrics_path: '/metrics' # Prometheus metrics endpoint in node-app
