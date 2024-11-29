@@ -6,7 +6,7 @@
 
 - name: Include Prometheus token from vars.yml
   include_vars:
-    file: ansible/vars.yml
+    file: vars.yml
 
 - name: Run the Prometheus installation script
   command: /tmp/install_prometheus.sh

@@ -145,7 +145,7 @@
 
 - name: Append Prometheus Token to vars.yml
   blockinfile:
-    path: ansible/vars.yml
+    path: vars.yml
     block: |
       prometheus_token: "{{ prometheus_token.stdout }}"
     insertafter: EOF
