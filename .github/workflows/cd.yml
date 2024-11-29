@@ -44,26 +44,25 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Update Ansible Hosts File
+      - name: Update Ansible Hosts File and vars.yml
         run: |
+          # Clear previous contents
           echo "[all:vars]" > ansible/hosts.ini
           echo "ansible_user=ubuntu" >> ansible/hosts.ini
           echo "" >> ansible/hosts.ini
-          
+
+          # Write agent IPs to hosts.ini and vars.yml
           echo "[agent]" >> ansible/hosts.ini
           grep 'agent' ansible/instance_ips.txt | awk '{print $2}' >> ansible/hosts.ini
-          
-          echo "" >> ansible/hosts.ini
-          echo "[prometheus]" >> ansible/hosts.ini
-          grep 'prometheus' ansible/instance_ips.txt | awk '{print $2}' >> ansible/hosts.ini
+          agent_ip=$(grep 'agent' ansible/instance_ips.txt | awk '{print $2}')
+          echo "agent: $agent_ip" > ansible/vars.yml
 
-      - name: Update vars.yml with Instance IPs
-        run: |
-          echo "agent:" > ansible/vars.yml
-          grep 'agent' ansible/instance_ips.txt | awk '{print "  - " $2}' >> ansible/vars.yml
-          
-          echo "prometheus_server:" >> ansible/vars.yml
-          grep 'prometheus' ansible/instance_ips.txt | awk '{print "  - " $2}' >> ansible/vars.yml
+          # Write Prometheus IPs to hosts.ini and vars.yml
+          echo "" >> ansible/hosts.ini
+          echo "[prometheus_server]" >> ansible/hosts.ini
+          grep 'prometheus' ansible/instance_ips.txt | awk '{print $2}' >> ansible/hosts.ini
+          prometheus_ip=$(grep 'prometheus' ansible/instance_ips.txt | awk '{print $2}')
+          echo "prometheus_server: $prometheus_ip" >> ansible/vars.yml
 
       - name: Add SSH Key
         run: |
@@ -73,7 +72,9 @@ jobs:
 
       - name: Debug Hosts File and vars.yml
         run: |
+          echo "----- hosts.ini -----"
           cat ansible/hosts.ini
+          echo "----- vars.yml -----"
           cat ansible/vars.yml
 
       - name: Wait for Instances to Initialize
