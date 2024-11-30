@@ -8,6 +8,6 @@ spec:
     matchLabels:
       app: node-app # Matches the labels in your Service
   endpoints:
-    - port: 3000
+    - port: metrics
       path: /metrics
       interval: 15s

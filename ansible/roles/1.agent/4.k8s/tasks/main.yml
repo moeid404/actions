@@ -55,12 +55,18 @@
   become: yes
 
 ######################################################
+- name: Ensure monitoring namespace exists
+  shell: |
+    kubectl get namespace monitoring || kubectl create namespace monitoring
+  register: monitoring_namespace_status
+  retries: 3
+  delay: 5
+  failed_when: "'Error' in monitoring_namespace_status.stderr or monitoring_namespace_status.rc != 0"
+  args:
+    executable: /bin/bash
 
 - name: Install the Prometheus Operator and Kube-State-Metrics
   shell: |
-    # Ensure monitoring namespace exists
-    kubectl create namespace monitoring || true
-
     # Download and split Prometheus Operator bundle to avoid annotation issues
     curl -sL https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml -o prometheus-operator-bundle.yaml
     csplit -z prometheus-operator-bundle.yaml "/---/" {*}
@@ -84,6 +90,7 @@
   retries: 3
   delay: 5
   failed_when: prometheus_operator_status.rc != 0
+
 
 
 
