@@ -4,9 +4,13 @@
     dest: /tmp/install_prometheus.sh
     mode: '0755'  # Make the script executable
 
-- name: Include Prometheus token from vars.yml
-  include_vars:
-    file: "{{ playbook_dir }}/ansible/vars.yml"
+- name: Update Prometheus configuration with token path
+  lineinfile:
+    path: "{{ playbook_dir }}/prometheus.yml"
+    regexp: '^ *bearer_token_file:'
+    line: "    bearer_token_file: {{ playbook_dir }}/prometheus_secrets/k8s-token"
+  delegate_to: localhost
+  notify: Restart Prometheus
 
 - name: Run the Prometheus installation script
   command: /tmp/install_prometheus.sh

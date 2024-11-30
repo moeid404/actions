@@ -32,3 +32,6 @@ scrape_configs:
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
 
+- job_name: 'node-exporter'
+  static_configs:
+  - targets: ['{{ agent }}:9100']

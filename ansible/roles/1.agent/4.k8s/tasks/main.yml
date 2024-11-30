@@ -66,6 +66,27 @@
   args:
     executable: /bin/bash
 
+- name: Extract Prometheus ServiceAccount token name
+  shell: |
+    kubectl get secrets -n monitoring | grep prometheus-token | awk '{print $1}'
+  register: token_name
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Retrieve Prometheus ServiceAccount token value
+  shell: |
+    kubectl get secret {{ token_name.stdout }} -n monitoring -o jsonpath='{.data.token}' | base64 --decode
+  register: token_value
+  args:
+    executable: /bin/bash
+
+- name: Save the token to a local file
+  copy:
+    content: "{{ token_value.stdout }}"
+    dest: "{{ playbook_dir }}/prometheus_secrets/k8s-token"
+  delegate_to: localhost
+
 ######################################################
 # Deploy Node Exporter, App, and RBAC
 ######################################################
