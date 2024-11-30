@@ -88,6 +88,23 @@
     - { src: "kube-state-metrics.yaml", dest: "/opt/k8s-manifests/kube-state-metrics.yaml" }
     - { src: "ServiceMonitor.yml", dest: "/opt/k8s-manifests/ServiceMonitor.yml" }
 
+- name: Install Prometheus Operator CRDs
+  shell: |
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml
+  register: prometheus_operator_crds_status
+  retries: 3
+  delay: 5
+  failed_when: prometheus_operator_crds_status.rc != 0
+
+- name: Validate ServiceMonitor CRD installation
+  shell: |
+    kubectl get crds | grep servicemonitor
+  register: servicemonitor_crd_status
+  retries: 3
+  delay: 5
+  failed_when: "'servicemonitor' not in servicemonitor_crd_status.stdout"
+
+
 - name: Apply Kubernetes manifests
   command: "kubectl apply -f {{ item }}"
   loop:
