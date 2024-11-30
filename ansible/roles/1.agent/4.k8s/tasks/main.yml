@@ -67,7 +67,7 @@
     executable: /bin/bash
 
 ######################################################
-# Deploy Node Exporter, Kube-State-Metrics, and ServiceMonitor
+# Deploy Node Exporter, App, and RBAC
 ######################################################
 
 - name: Create a working directory for Kubernetes manifests
@@ -85,72 +85,20 @@
     - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
     - { src: "node-exporter.yml", dest: "/opt/k8s-manifests/node-exporter.yml" }
-    - { src: "kube-state-metrics.yaml", dest: "/opt/k8s-manifests/kube-state-metrics.yaml" }
-    - { src: "ServiceMonitor.yml", dest: "/opt/k8s-manifests/ServiceMonitor.yml" }
+    - { src: "node-exporter-service.yml", dest: "/opt/k8s-manifests/node-exporter-service.yml" }
+    - { src: "service-account.yml", dest: "/opt/k8s-manifests/service-account.yml" }
 
-- name: Install Prometheus Operator CRDs
-  shell: |
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml
-  register: prometheus_operator_crds_status
-  retries: 3
-  delay: 5
-  failed_when: prometheus_operator_crds_status.rc != 0
-
-- name: Validate ServiceMonitor CRD installation
-  shell: |
-    kubectl get crds | grep servicemonitor
-  register: servicemonitor_crd_status
-  retries: 3
-  delay: 5
-  failed_when: "'servicemonitor' not in servicemonitor_crd_status.stdout"
-
-
-- name: Apply Kubernetes manifests
+- name: Apply Kubernetes manifests for Node Exporter and App
   command: "kubectl apply -f {{ item }}"
   loop:
+    - /opt/k8s-manifests/service-account.yml
     - /opt/k8s-manifests/node-exporter.yml
-    - /opt/k8s-manifests/kube-state-metrics.yaml
-    - /opt/k8s-manifests/ServiceMonitor.yml
+    - /opt/k8s-manifests/node-exporter-service.yml
+    - /opt/k8s-manifests/deployment.yml
+    - /opt/k8s-manifests/service.yml
+    - /opt/k8s-manifests/ingress.yml
   register: kubectl_output
   retries: 3
   delay: 10
   failed_when: kubectl_output.rc != 0
 
-######################################################
-# Validate Deployments
-######################################################
-
-- name: Validate Node Exporter deployment
-  shell: |
-    kubectl get pods -n monitoring | grep node-exporter
-  retries: 5
-  delay: 10
-  register: node_exporter_validation
-  failed_when: "'node-exporter' not in node_exporter_validation.stdout"
-
-- name: Validate Kube-State-Metrics deployment
-  shell: |
-    kubectl get pods -n kube-system | grep kube-state-metrics
-  retries: 5
-  delay: 10
-  register: kube_state_metrics_validation
-  failed_when: "'kube-state-metrics' not in kube_state_metrics_validation.stdout"
-
-- name: Validate ServiceMonitor deployment
-  shell: |
-    kubectl get servicemonitor -n monitoring
-  retries: 5
-  delay: 10
-  register: service_monitor_validation
-  failed_when: "'Error' in service_monitor_validation.stdout"
-
-######################################################
-# Display Debug Logs
-######################################################
-
-- name: Debug Node Exporter and Kube-State-Metrics
-  shell: |
-    kubectl get pods -n monitoring
-    kubectl logs -l app=node-exporter -n monitoring || echo "Node Exporter logs not available"
-    kubectl logs -l app=kube-state-metrics -n kube-system || echo "Kube-State-Metrics logs not available"
-  register: debug_logs

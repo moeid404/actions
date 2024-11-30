@@ -11,22 +11,24 @@ alerting:
 rule_files:
   - "rules.yml"
   # - "second_rules.yml"
-
 scrape_configs:
-  # Kubernetes API server metrics
-  - job_name: 'kubernetes'
-    static_configs:
-      - targets: ['{{ agent }}:6443'] # Replace {{ agent }} with the Kubernetes API server IP
-    scheme: https
+- job_name: 'kubernetes-pods'
+  kubernetes_sd_configs:
+  - role: pod
+    api_server: "https://{{ agent }}:6443"
+    bearer_token_file: "/etc/prometheus/secrets/k8s-token"
     tls_config:
-      insecure_skip_verify: true
+      ca_file: "/etc/prometheus/secrets/ca.crt"
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+    action: replace
+    target_label: __address__
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
 
-  # Node Exporter metrics
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['{{ agent }}:9100'] # Replace {{ agent }} with the Node Exporter IP
-
-  # Kube-State-Metrics
-  - job_name: 'kube-state-metrics'
-    static_configs:
-      - targets: ['{{ agent }}:8080'] # Replace {{ agent }} with the Kube-State-Metrics IP
