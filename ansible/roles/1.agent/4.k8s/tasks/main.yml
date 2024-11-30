@@ -3,7 +3,9 @@
 
 - name: Install Kind
   script: kind.sh
+
 ######################################################
+
 - name: Install Docker
   apt:
     name: docker.io
@@ -16,7 +18,9 @@
     state: started
     enabled: yes
   become: yes
+
 ######################################################
+
 - name: Install kind
   get_url:
     url: "https://kind.sigs.k8s.io/dl/v0.25.0/kind-linux-amd64"
@@ -49,6 +53,7 @@
   args:
     executable: /bin/bash
   become: yes
+
 ######################################################
 
 - name: Create a working directory for Kubernetes manifests
@@ -65,10 +70,10 @@
     - { src: "deployment.yml", dest: "/opt/k8s-manifests/deployment.yml" }
     - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
+    - { src: "ServiceMonitor.yml", dest: "/opt/k8s-manifests/ServiceMonitor.yml" }
+    - { src: "node-exporter.yml", dest: "/opt/k8s-manifests/node-exporter.yml" }
 
-# Purpose: Checks if the Ingress Controller deployment is fully initialized and ready to handle ingress resources.
-# Runs kubectl rollout status to monitor the rollout of the deployment.
-# Looks for the phrase "successfully rolled out" in the command output to confirm readiness.
+# Ensure Ingress Controller is ready
 - name: Ensure Ingress Controller is ready
   shell: |
     kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx
@@ -83,69 +88,19 @@
     - /opt/k8s-manifests/deployment.yml
     - /opt/k8s-manifests/service.yml
     - /opt/k8s-manifests/ingress.yml
+    - /opt/k8s-manifests/ServiceMonitor.yml
+    - /opt/k8s-manifests/node-exporter.yml
   register: kubectl_output
   retries: 3
   delay: 10
   failed_when: kubectl_output.rc != 0
 
-- name: Create Service Account and Role for Prometheus
-  block:
-    - name: Create Prometheus Service Account YAML
-      copy:
-        dest: /opt/k8s-manifests/prometheus-service-account.yaml
-        content: |
-          apiVersion: v1
-          kind: ServiceAccount
-          metadata:
-            name: prometheus
-            namespace: default
-          ---
-          apiVersion: rbac.authorization.k8s.io/v1
-          kind: ClusterRole
-          metadata:
-            name: prometheus
-          rules:
-            - apiGroups: [""]
-              resources: ["nodes", "services", "endpoints", "pods"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: [""]
-              resources: ["configmaps"]
-              verbs: ["get"]
-            - apiGroups: ["extensions"]
-              resources: ["ingresses"]
-              verbs: ["get", "list", "watch"]
-          ---
-          apiVersion: rbac.authorization.k8s.io/v1
-          kind: ClusterRoleBinding
-          metadata:
-            name: prometheus
-          roleRef:
-            apiGroup: rbac.authorization.k8s.io
-            kind: ClusterRole
-            name: prometheus
-          subjects:
-            - kind: ServiceAccount
-              name: prometheus
-              namespace: default
-
-    - name: Apply Prometheus Service Account YAML
-      shell: kubectl apply -f /opt/k8s-manifests/prometheus-service-account.yaml
-      args:
-        executable: /bin/bash
-
-- name: Retrieve Prometheus Service Account Secret Name
+# Validate if ServiceMonitor and Node Exporter are successfully deployed
+- name: Validate ServiceMonitor and Node Exporter deployment
   shell: |
-    kubectl get serviceaccount prometheus -n default -o jsonpath='{.secrets[0].name}'
-  register: prometheus_secret_name
-
-- name: Get Prometheus Service Account Token
-  shell: |
-    kubectl get secret {{ prometheus_secret_name.stdout }} -n default -o jsonpath='{.data.token}' | base64 --decode
-  register: prometheus_token
-
-- name: Append Prometheus Token to vars.yml
-  blockinfile:
-    path: "{{ playbook_dir }}/ansible/vars.yml"
-    block: |
-      prometheus_token: "{{ prometheus_token.stdout }}"
-    insertafter: EOF
+    kubectl get servicemonitor
+    kubectl get pods -n monitoring
+  register: validation_status
+  retries: 5
+  delay: 10
+  failed_when: validation_status.stdout.find("Error") != -1

@@ -13,36 +13,26 @@ rule_files:
   # - "second_rules.yml"
 
 scrape_configs:
-
-  # Prometheus server itself
-  - job_name: "prometheus"
-    static_configs:
-      - targets: ["localhost:9090"]
-
-  # Kubernetes Service Discovery
+  # Scrape Kubernetes API
   - job_name: 'kubernetes'
     kubernetes_sd_configs:
-      - api_server: "https://{{ prometheus_server }}:6443"
-        role: service
-        bearer_token: "{{ prometheus_token }}"
-        tls_config:
-          insecure_skip_verify: true
+      - api_server: https://{{ agent }}
+        role: endpoints
     relabel_configs:
-      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+      - source_labels: [__meta_kubernetes_namespace]
         action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
-        action: replace
-        target_label: __address__
-        regex: (.+):(?:[0-9]+)
-        replacement: $1:$2
+        regex: monitoring
+      - source_labels: [__meta_kubernetes_service_name]
+        target_label: service
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
 
-  # Static configuration for Node.js app
-  - job_name: 'nodejs-app-static'
-    metrics_path: '/metrics'
+  # Scrape Node Exporter on Kubernetes nodes
+  - job_name: 'node-exporter'
     static_configs:
-      - targets: ["{{ agent }}:3000"]
+      - targets: ['{{ agent }}:9100']
+
+  # Scrape Kube State Metrics
+  - job_name: 'kube-state-metrics'
+    static_configs:
+      - targets: ['{{ agent }}:8080']

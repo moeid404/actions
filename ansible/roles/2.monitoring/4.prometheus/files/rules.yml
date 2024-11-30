@@ -1,21 +1,27 @@
 groups:
-- name: node-app.rules
-  rules:
-  - alert: NodeAppAvailability
-    expr: kube_deployment_status_replicas_available{deployment="node-app"} < 2
-    for: 1m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Node App has less than 2 available replicas"
-      description: "Node-app deployment is running with less than 2 replicas for more than 1 minute."
-
-- name: test-alert.rules
-  rules:
-  - alert: TestAlert
-    expr: vector(1)  # Always fires
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      description: "This is a test alert to verify Slack integration."
+  - name: node-app-alerts
+    rules:
+      - alert: AppDown
+        expr: absent(up{job="node-app-service"})
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node.js App is down"
+          description: "Prometheus has not been able to scrape the /metrics endpoint for 1 minute."
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate exceeds 5% in the last 5 minutes."
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{pod=~"node-app-.*"} > 500000000
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 500MB for pod {{ $labels.pod }}."
