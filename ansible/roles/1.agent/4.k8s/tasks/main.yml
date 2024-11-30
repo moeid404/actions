@@ -59,10 +59,19 @@
 - name: Install the Prometheus Operator and Kube-State-Metrics
   shell: |
     kubectl create namespace monitoring || true
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml
-    kubectl apply -f https://github.com/kubernetes/kube-state-metrics/releases/latest/download/kube-state-metrics.yaml
+
+    # Download and split Prometheus Operator bundle to avoid annotation issues
+    curl -sL https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml | csplit -z - "/---/" {*}
+    for file in xx*; do
+      kubectl apply -f $file || break
+    done
+
+    # Corrected URL for Kube-State-Metrics
+    curl -LO https://github.com/kubernetes/kube-state-metrics/releases/latest/download/kube-state-metrics.yaml
+    kubectl apply -f kube-state-metrics.yaml
   args:
     executable: /bin/bash
+
 
 
 - name: Create a working directory for Kubernetes manifests
