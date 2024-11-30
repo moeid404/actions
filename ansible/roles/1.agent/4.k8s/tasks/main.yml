@@ -56,6 +56,14 @@
 
 ######################################################
 
+- name: Install the Prometheus Operator and Kube-State-Metrics
+  shell: |
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml
+    kubectl create namespace monitoring || true
+    kubectl apply -f https://github.com/kubernetes/kube-state-metrics/releases/latest/download/kube-state-metrics.yaml
+  args:
+    executable: /bin/bash
+
 - name: Create a working directory for Kubernetes manifests
   file:
     path: /opt/k8s-manifests
@@ -98,7 +106,7 @@
 # Validate if ServiceMonitor and Node Exporter are successfully deployed
 - name: Validate ServiceMonitor and Node Exporter deployment
   shell: |
-    kubectl get servicemonitor
+    kubectl get servicemonitor -n monitoring
     kubectl get pods -n monitoring
   register: validation_status
   retries: 5
