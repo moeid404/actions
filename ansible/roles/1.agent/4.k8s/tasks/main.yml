@@ -55,6 +55,7 @@
   become: yes
 
 ######################################################
+
 - name: Ensure monitoring namespace exists
   shell: |
     kubectl get namespace monitoring || kubectl create namespace monitoring
@@ -65,41 +66,9 @@
   args:
     executable: /bin/bash
 
-- name: Install the Prometheus Operator and Kube-State-Metrics
-  shell: |
-    # Ensure Prometheus Operator Bundle is downloaded
-    curl -sL https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml -o prometheus-operator-bundle.yaml
-    if [ ! -s prometheus-operator-bundle.yaml ]; then
-      echo "Prometheus Operator Bundle is empty or not downloaded correctly!" && exit 1
-    fi
-
-    # Split the bundle into individual files
-    csplit -z prometheus-operator-bundle.yaml "/---/" {*}
-    for file in xx*; do
-      if [ -s $file ]; then # Apply only non-empty files
-        kubectl apply -f $file || exit 1
-      fi
-    done
-
-    # Ensure kube-state-metrics manifest is downloaded
-    curl -LO https://github.com/kubernetes/kube-state-metrics/releases/latest/download/kube-state-metrics.yaml
-    if [ ! -s kube-state-metrics.yaml ]; then
-      echo "Kube-State-Metrics manifest is missing or empty!" && exit 1
-    fi
-
-    # Apply kube-state-metrics manifest
-    kubectl apply -f kube-state-metrics.yaml || exit 1
-  args:
-    executable: /bin/bash
-  register: prometheus_operator_status
-  retries: 3
-  delay: 5
-  failed_when: prometheus_operator_status.rc != 0
-
-
-
-
-
+######################################################
+# Deploy Node Exporter, Kube-State-Metrics, and ServiceMonitor
+######################################################
 
 - name: Create a working directory for Kubernetes manifests
   file:
@@ -115,37 +84,56 @@
     - { src: "deployment.yml", dest: "/opt/k8s-manifests/deployment.yml" }
     - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
-    - { src: "ServiceMonitor.yml", dest: "/opt/k8s-manifests/ServiceMonitor.yml" }
     - { src: "node-exporter.yml", dest: "/opt/k8s-manifests/node-exporter.yml" }
-
-# Ensure Ingress Controller is ready
-- name: Ensure Ingress Controller is ready
-  shell: |
-    kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx
-  register: ingress_controller_status
-  until: ingress_controller_status.stdout.find("successfully rolled out") != -1
-  retries: 5
-  delay: 10
+    - { src: "kube-state-metrics.yaml", dest: "/opt/k8s-manifests/kube-state-metrics.yaml" }
+    - { src: "ServiceMonitor.yml", dest: "/opt/k8s-manifests/ServiceMonitor.yml" }
 
 - name: Apply Kubernetes manifests
-  command: "sudo kubectl apply -f {{ item }} {{ '--validate=false' if 'ingress.yml' in item else '' }}"
+  command: "kubectl apply -f {{ item }}"
   loop:
-    - /opt/k8s-manifests/deployment.yml
-    - /opt/k8s-manifests/service.yml
-    - /opt/k8s-manifests/ingress.yml
-    - /opt/k8s-manifests/ServiceMonitor.yml
     - /opt/k8s-manifests/node-exporter.yml
+    - /opt/k8s-manifests/kube-state-metrics.yaml
+    - /opt/k8s-manifests/ServiceMonitor.yml
   register: kubectl_output
   retries: 3
   delay: 10
   failed_when: kubectl_output.rc != 0
 
-# Validate if ServiceMonitor and Node Exporter are successfully deployed
-- name: Validate ServiceMonitor and Node Exporter deployment
+######################################################
+# Validate Deployments
+######################################################
+
+- name: Validate Node Exporter deployment
   shell: |
-    kubectl get servicemonitor -n monitoring
-    kubectl get pods -n monitoring
-  register: validation_status
+    kubectl get pods -n monitoring | grep node-exporter
   retries: 5
   delay: 10
-  failed_when: validation_status.stdout.find("Error") != -1
+  register: node_exporter_validation
+  failed_when: "'node-exporter' not in node_exporter_validation.stdout"
+
+- name: Validate Kube-State-Metrics deployment
+  shell: |
+    kubectl get pods -n kube-system | grep kube-state-metrics
+  retries: 5
+  delay: 10
+  register: kube_state_metrics_validation
+  failed_when: "'kube-state-metrics' not in kube_state_metrics_validation.stdout"
+
+- name: Validate ServiceMonitor deployment
+  shell: |
+    kubectl get servicemonitor -n monitoring
+  retries: 5
+  delay: 10
+  register: service_monitor_validation
+  failed_when: "'Error' in service_monitor_validation.stdout"
+
+######################################################
+# Display Debug Logs
+######################################################
+
+- name: Debug Node Exporter and Kube-State-Metrics
+  shell: |
+    kubectl get pods -n monitoring
+    kubectl logs -l app=node-exporter -n monitoring || echo "Node Exporter logs not available"
+    kubectl logs -l app=kube-state-metrics -n kube-system || echo "Kube-State-Metrics logs not available"
+  register: debug_logs

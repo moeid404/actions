@@ -13,26 +13,20 @@ rule_files:
   # - "second_rules.yml"
 
 scrape_configs:
-  # Scrape Kubernetes API
+  # Kubernetes API server metrics
   - job_name: 'kubernetes'
-    kubernetes_sd_configs:
-      - api_server: https://{{ agent }}
-        role: endpoints
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_namespace]
-        action: keep
-        regex: monitoring
-      - source_labels: [__meta_kubernetes_service_name]
-        target_label: service
-      - source_labels: [__meta_kubernetes_pod_name]
-        target_label: pod
+    static_configs:
+      - targets: ['{{ agent }}:6443'] # Replace {{ agent }} with the Kubernetes API server IP
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
 
-  # Scrape Node Exporter on Kubernetes nodes
+  # Node Exporter metrics
   - job_name: 'node-exporter'
     static_configs:
-      - targets: ['{{ agent }}:9100']
+      - targets: ['{{ agent }}:9100'] # Replace {{ agent }} with the Node Exporter IP
 
-  # Scrape Kube State Metrics
+  # Kube-State-Metrics
   - job_name: 'kube-state-metrics'
     static_configs:
-      - targets: ['{{ agent }}:8080']
+      - targets: ['{{ agent }}:8080'] # Replace {{ agent }} with the Kube-State-Metrics IP
