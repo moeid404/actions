@@ -81,19 +81,19 @@
   args:
     executable: /bin/bash
 
-- name: Create a directory for Prometheus secrets
+- name: Create a shared directory for Prometheus secrets
   file:
     path: "{{ playbook_dir }}/prometheus_secrets"
     state: directory
-    mode: '0700'
+    mode: '0755'
   delegate_to: localhost
 
-
-- name: Save the token to a local file
+- name: Save the token to a shared file
   copy:
     content: "{{ token_value.stdout }}"
     dest: "{{ playbook_dir }}/prometheus_secrets/k8s-token"
   delegate_to: localhost
+
 
 ######################################################
 # Deploy Node Exporter, App, and RBAC

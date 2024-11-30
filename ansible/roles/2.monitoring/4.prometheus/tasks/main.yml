@@ -4,13 +4,37 @@
     dest: /tmp/install_prometheus.sh
     mode: '0755'  # Make the script executable
 
+- name: Ensure the Prometheus secrets directory exists
+  file:
+    path: /etc/prometheus/secrets
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Copy the Kubernetes token to Prometheus server
+  copy:
+    src: "{{ playbook_dir }}/prometheus_secrets/k8s-token"
+    dest: /etc/prometheus/secrets/k8s-token
+    owner: prometheus
+    group: prometheus
+    mode: '0600'
+  become: yes
+
 - name: Update Prometheus configuration with token path
   lineinfile:
-    path: "{{ playbook_dir }}/prometheus.yml"
+    path: /etc/prometheus/prometheus.yml
     regexp: '^ *bearer_token_file:'
-    line: "    bearer_token_file: {{ playbook_dir }}/prometheus_secrets/k8s-token"
-  delegate_to: localhost
+    line: "    bearer_token_file: /etc/prometheus/secrets/k8s-token"
   notify: Restart Prometheus
+  become: yes
+
+- name: Restart Prometheus service
+  systemd:
+    name: prometheus
+    state: restarted
+    enabled: yes
+  become: yes
+
 
 - name: Run the Prometheus installation script
   command: /tmp/install_prometheus.sh
