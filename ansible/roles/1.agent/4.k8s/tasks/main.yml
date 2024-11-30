@@ -58,19 +58,33 @@
 
 - name: Install the Prometheus Operator and Kube-State-Metrics
   shell: |
+    # Ensure monitoring namespace exists
     kubectl create namespace monitoring || true
 
     # Download and split Prometheus Operator bundle to avoid annotation issues
-    curl -sL https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml | csplit -z - "/---/" {*}
+    curl -sL https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.59/bundle.yaml -o prometheus-operator-bundle.yaml
+    csplit -z prometheus-operator-bundle.yaml "/---/" {*}
     for file in xx*; do
-      kubectl apply -f $file || break
+      if [ -s $file ]; then # Apply only if the file is not empty
+        kubectl apply -f $file || break
+      fi
     done
 
-    # Corrected URL for Kube-State-Metrics
-    curl -LO https://github.com/kubernetes/kube-state-metrics/releases/latest/download/kube-state-metrics.yaml
-    kubectl apply -f kube-state-metrics.yaml
+    # Download and apply Kube-State-Metrics
+    curl -LO https://github.com/kubernetes/kube-state-metrics/releases/latest/download/kube-state-metrics.yaml || true
+    if [ -f kube-state-metrics.yaml ]; then
+      kubectl apply -f kube-state-metrics.yaml
+    else
+      echo "Kube-State-Metrics manifest not found."
+      exit 1
+    fi
   args:
     executable: /bin/bash
+  register: prometheus_operator_status
+  retries: 3
+  delay: 5
+  failed_when: prometheus_operator_status.rc != 0
+
 
 
 
