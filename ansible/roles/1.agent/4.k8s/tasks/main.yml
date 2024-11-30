@@ -81,6 +81,14 @@
   args:
     executable: /bin/bash
 
+- name: Create a directory for Prometheus secrets
+  file:
+    path: "{{ playbook_dir }}/prometheus_secrets"
+    state: directory
+    mode: '0700'
+  delegate_to: localhost
+
+
 - name: Save the token to a local file
   copy:
     content: "{{ token_value.stdout }}"
