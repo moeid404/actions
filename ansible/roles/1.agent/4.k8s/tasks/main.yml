@@ -55,47 +55,6 @@
   become: yes
 
 ######################################################
-
-- name: Ensure monitoring namespace exists
-  shell: |
-    kubectl get namespace monitoring || kubectl create namespace monitoring
-  register: monitoring_namespace_status
-  retries: 3
-  delay: 5
-  failed_when: "'Error' in monitoring_namespace_status.stderr or monitoring_namespace_status.rc != 0"
-  args:
-    executable: /bin/bash
-
-- name: Extract Prometheus ServiceAccount token name
-  shell: |
-    kubectl get secrets -n monitoring | grep prometheus-token | awk '{print $1}'
-  register: token_name
-  args:
-    executable: /bin/bash
-  changed_when: false
-
-- name: Retrieve Prometheus ServiceAccount token value
-  shell: |
-    kubectl get secret {{ token_name.stdout }} -n monitoring -o jsonpath='{.data.token}' | base64 --decode
-  register: token_value
-  args:
-    executable: /bin/bash
-
-- name: Create a shared directory for Prometheus secrets
-  file:
-    path: "{{ playbook_dir }}/prometheus_secrets"
-    state: directory
-    mode: '0755'
-  delegate_to: localhost
-
-- name: Save the token to a shared file
-  copy:
-    content: "{{ token_value.stdout }}"
-    dest: "{{ playbook_dir }}/prometheus_secrets/k8s-token"
-  delegate_to: localhost
-
-
-######################################################
 # Deploy Node Exporter, App, and RBAC
 ######################################################
 
@@ -114,8 +73,8 @@
     - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
     - { src: "node-exporter.yml", dest: "/opt/k8s-manifests/node-exporter.yml" }
-    - { src: "node-exporter-service.yml", dest: "/opt/k8s-manifests/node-exporter-service.yml" }
-    - { src: "service-account.yml", dest: "/opt/k8s-manifests/service-account.yml" }
+    - { src: "cadvisor.yml", dest: "/opt/k8s-manifests/cadvisor.yml" }
+    - { src: "blackbox-exporter.yml", dest: "/opt/k8s-manifests/blackbox-exporter.yml" }
 
 # Purpose: Checks if the Ingress Controller deployment is fully initialized and ready to handle ingress resources.
 # Runs kubectl rollout status to monitor the rollout of the deployment.
@@ -129,11 +88,11 @@
   delay: 10
 
 - name: Apply Kubernetes manifests for Node Exporter and App
-  command: "kubectl apply -f {{ item }}"
+  command: "sudo kubectl apply -f {{ item }} {{ '--validate=false' if 'ingress.yml' in item else '' }}"
   loop:
-    - /opt/k8s-manifests/service-account.yml
+    - /opt/k8s-manifests/blackbox-exporter.yml
     - /opt/k8s-manifests/node-exporter.yml
-    - /opt/k8s-manifests/node-exporter-service.yml
+    - /opt/k8s-manifests/cadvisor.yml
     - /opt/k8s-manifests/deployment.yml
     - /opt/k8s-manifests/service.yml
     - /opt/k8s-manifests/ingress.yml
