@@ -4,6 +4,9 @@
 cat <<EOF | kind create cluster --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  ipFamily: ipv4
+  apiServerAddress: "0.0.0.0"
 nodes:
 - role: control-plane
   kubeadmConfigPatches:
@@ -26,6 +29,7 @@ nodes:
     hostPort: 30002
     protocol: TCP
 EOF
+
 
 
 # Apply the ingress-nginx controller configuration
