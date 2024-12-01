@@ -4,6 +4,7 @@ metadata:
   name: node-app-ingress
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false" # Disable SSL redirect
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:

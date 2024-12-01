@@ -15,37 +15,25 @@ scrape_configs:
     static_configs:
       - targets: ['{{ agent }}:9100']
 
-  # cAdvisor Metrics
-  - job_name: 'kubernetes-cadvisor'
+  - job_name: 'node-app'
     static_configs:
-      - targets: 
-        - '{{ agent }}:30080'
+      - targets: ['{{ agent }}:3000']
 
-  # Blackbox Exporter
-  - job_name: 'blackbox-exporter'
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['{{ agent }}:8080']
+
+  - job_name: 'blackbox'
     metrics_path: /probe
     params:
-      module: [http_2xx]  
+      module: [http_2xx]
     static_configs:
       - targets:
-        - http://{{ agent }}
+          - http://{{ agent }}:3000
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: '{{ agent }}:30115'
-
-  # Node.js Application Metrics
-  - job_name: 'nodeapp-metrics'
-    static_configs:
-      - targets: 
-        - '{{ agent }}:30000/metrics'
-
-  # Node.js Application Health Check
-  - job_name: 'nodeapp-health'
-    metrics_path: /health
-    static_configs:
-      - targets: 
-        - '{{ agent }}:30000/health'
+        replacement: {{ agent }}:9115
