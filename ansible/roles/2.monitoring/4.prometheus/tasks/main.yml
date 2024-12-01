@@ -4,14 +4,6 @@
     dest: /tmp/install_prometheus.sh
     mode: '0755'  # Make the script executable
 
-- name: Restart Prometheus service
-  systemd:
-    name: prometheus
-    state: restarted
-    enabled: yes
-  become: yes
-
-
 - name: Run the Prometheus installation script
   command: /tmp/install_prometheus.sh
 
