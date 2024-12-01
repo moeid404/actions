@@ -13,3 +13,17 @@ spec:
       name: http-metrics
   nodeSelector:
     kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox-exporter
+spec:
+  type: NodePort
+  ports:
+  - port: 9115
+    targetPort: 9115
+    protocol: TCP
+    nodePort: 30002  # Exposes blackbox on a high port
+  selector:
+    app: blackbox

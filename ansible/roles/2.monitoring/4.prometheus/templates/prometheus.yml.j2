@@ -17,11 +17,11 @@ scrape_configs:
 
   - job_name: 'node-app'
     static_configs:
-      - targets: ['{{ agent }}:3000']
-
+      - targets: ['{{ agent }}']
+      
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['{{ agent }}:8080']
+      - targets: ['{{ agent }}:30001']
 
   - job_name: 'blackbox'
     metrics_path: /probe
@@ -29,11 +29,11 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-          - http://{{ agent }}:3000
+          - http://{{ agent }}
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: {{ agent }}:9115
+        replacement: {{ agent }}:30002
