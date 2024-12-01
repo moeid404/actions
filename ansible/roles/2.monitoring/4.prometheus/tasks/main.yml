@@ -4,54 +4,6 @@
     dest: /tmp/install_prometheus.sh
     mode: '0755'  # Make the script executable
 
-- name: Ensure prometheus user exists
-  ansible.builtin.user:
-    name: prometheus
-    state: present
-    system: yes
-
-- name: Ensure prometheus group exists
-  ansible.builtin.group:
-    name: prometheus
-    state: present
-
-- name: Ensure the Prometheus secrets directory exists
-  file:
-    path: /etc/prometheus/secrets
-    state: directory
-    mode: '0755'
-    owner: prometheus
-    group: prometheus
-  become: yes
-
-- name: Copy the Kubernetes token to Prometheus server
-  copy:
-    src: "{{ playbook_dir }}/prometheus_secrets/k8s-token"
-    dest: /etc/prometheus/secrets/k8s-token
-    owner: prometheus
-    group: prometheus
-    mode: '0600'
-  become: yes
-
-
-
-- name: Copy the Kubernetes token to Prometheus server
-  copy:
-    src: "{{ playbook_dir }}/prometheus_secrets/k8s-token"
-    dest: /etc/prometheus/secrets/k8s-token
-    owner: prometheus
-    group: prometheus
-    mode: '0600'
-  become: yes
-
-- name: Update Prometheus configuration with token path
-  lineinfile:
-    path: /etc/prometheus/prometheus.yml
-    regexp: '^ *bearer_token_file:'
-    line: "    bearer_token_file: /etc/prometheus/secrets/k8s-token"
-  notify: Restart Prometheus
-  become: yes
-
 - name: Restart Prometheus service
   systemd:
     name: prometheus
