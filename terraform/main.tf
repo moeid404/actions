@@ -1,3 +1,7 @@
+provider "aws" {
+  region = "us-east-1" # Adjust based on your region
+}
+
 resource "aws_security_group" "agent_sg" {
   name        = "agent_sg"
   description = "Allow inbound traffic for Agent"
@@ -30,7 +34,6 @@ resource "aws_security_group" "agent_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
 
 resource "aws_security_group" "prometheus_sg" {
   name        = "prometheus_sg"
@@ -101,7 +104,7 @@ resource "aws_instance" "agent" {
 
   tags = {
     Name        = "agent-server"
-    Environment = "production" # Added to filter instances for GitHub Actions
+    Environment = "production"
     Role        = "agent"
   }
 }
@@ -114,19 +117,17 @@ resource "aws_instance" "prometheus" {
 
   tags = {
     Name        = "prometheus-server"
-    Environment = "production" # Added to filter instances for GitHub Actions
+    Environment = "production"
     Role        = "prometheus"
   }
 }
 
-# Outputs for the agent instance
 output "agent_public_ip" {
-  value = aws_instance.agent.public_ip
+  value       = aws_instance.agent.public_ip
   description = "Public IP of the agent server"
 }
 
-# Outputs for the Prometheus server
 output "prometheus_public_ip" {
-  value = aws_instance.prometheus.public_ip
+  value       = aws_instance.prometheus.public_ip
   description = "Public IP of the Prometheus server"
 }

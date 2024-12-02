@@ -90,11 +90,11 @@
 - name: Apply Kubernetes manifests for Node Exporter and App
   command: "sudo kubectl apply -f {{ item }} {{ '--validate=false' if 'ingress.yml' in item else '' }}"
   loop:
-    - /opt/k8s-manifests/blackbox-exporter.yml
-    - /opt/k8s-manifests/node-exporter.yml
-    - /opt/k8s-manifests/cadvisor.yml
     - /opt/k8s-manifests/deployment.yml
     - /opt/k8s-manifests/service.yml
+    - /opt/k8s-manifests/cadvisor.yml
+    - /opt/k8s-manifests/blackbox-exporter.yml
+    - /opt/k8s-manifests/node-exporter.yml
     - /opt/k8s-manifests/ingress.yml
   register: kubectl_output
   retries: 3
