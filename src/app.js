@@ -22,7 +22,7 @@ app.get('/metrics', async (req, res) => {
 // Health Check with Dependency Simulation
 app.get('/health', async (req, res) => {
     // Simulating a database connection health check
-    const isDatabaseConnected = false; // Replace with actual DB check logic
+    const isDatabaseConnected = true; // Replace with actual DB check logic
     if (!isDatabaseConnected) {
         return res.status(500).send({ status: 'FAIL', dbConnection: false });
     }
