@@ -130,9 +130,6 @@
     - { src: "deployment.yml", dest: "/opt/k8s-manifests/deployment.yml" }
     - { src: "service.yml", dest: "/opt/k8s-manifests/service.yml" }
     - { src: "ingress.yml", dest: "/opt/k8s-manifests/ingress.yml" }
-    - { src: "node-exporter.yml", dest: "/opt/k8s-manifests/node-exporter.yml" }
-    - { src: "cadvisor.yml", dest: "/opt/k8s-manifests/cadvisor.yml" }
-    - { src: "blackbox-exporter.yml", dest: "/opt/k8s-manifests/blackbox-exporter.yml" }
 
 # Purpose: Checks if the Ingress Controller deployment is fully initialized and ready to handle ingress resources.
 # Runs kubectl rollout status to monitor the rollout of the deployment.
@@ -150,9 +147,6 @@
   loop:
     - /opt/k8s-manifests/deployment.yml
     - /opt/k8s-manifests/service.yml
-    - /opt/k8s-manifests/cadvisor.yml
-    - /opt/k8s-manifests/blackbox-exporter.yml
-    - /opt/k8s-manifests/node-exporter.yml
     - /opt/k8s-manifests/ingress.yml
   register: kubectl_output
   retries: 3
