@@ -15,7 +15,7 @@ spec:
         app: node-app
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
-        prometheus.io/path: "/metrics"
+        prometheus.io/path: "metrics"  # Changed /metrics to metrics
     spec:
       containers:
       - name: node-app
