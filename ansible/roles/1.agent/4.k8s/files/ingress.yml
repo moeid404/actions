@@ -3,10 +3,13 @@ kind: Ingress
 metadata:
   name: node-app-ingress
   annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" # Disable SSL redirect
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   rules:
-  - http:
+  - host: "" # Match any host
+    http:
       paths:
       - path: /
         pathType: Prefix
@@ -14,4 +17,4 @@ spec:
           service:
             name: node-app-service
             port:
-              number: 80
+              number: 3000

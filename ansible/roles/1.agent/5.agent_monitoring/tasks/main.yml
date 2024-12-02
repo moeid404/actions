@@ -7,25 +7,22 @@
 - name: Run the node_exporter installation script
   command: /tmp/install_node_exporter.sh
 
-# - name: Update Docker daemon configuration
-#   copy:
-#     dest: /etc/docker/daemon.json
-#     content: |
-#       {
-#         "metrics-addr" : "127.0.0.1:9323",
-#         "experimental" : true
-#       }
+- name: Update Docker daemon configuration
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "metrics-addr" : "127.0.0.1:9323",
+        "experimental" : true
+      }
 
-# - name: Copy Kubernetes manifests to the remote server
-#   copy:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#   loop:
-#     - { src: "cadvisor-deployment.yml", dest: "/opt/k8s-manifests/cadvisor-deployment.yml" }
-#     - { src: "cadvisor-service.yml", dest: "/opt/k8s-manifests/cadvisor-service.yml" }
+- name: Copy docker-compose.yml to target
+  copy:
+    src: files/docker-compose.yml
+    dest: /tmp/docker-compose.yml
+    owner: root
+    group: root
+    mode: '0644'
 
-# - name: Apply Kubernetes manifests using kubectl
-#   command: sudo kubectl apply -f {{ item }}
-#   loop:
-#     - "/opt/k8s-manifests/cadvisor-deployment.yml"
-#     - "/opt/k8s-manifests/cadvisor-service.yml"
+- name: Start C-Advisor using Docker Compose
+  command: docker-compose -f /tmp/docker-compose.yml up -d
