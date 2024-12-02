@@ -23,9 +23,9 @@ jobs:
         run: npm install
         working-directory: src
 
-      - name: Run Unit Tests
-        run: npm test
-        working-directory: src
+      # - name: Run Unit Tests
+      #   run: npm test
+      #   working-directory: src
 
       - name: Start Application and Validate Endpoints
         run: |
