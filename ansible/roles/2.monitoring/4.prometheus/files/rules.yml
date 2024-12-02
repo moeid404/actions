@@ -1,27 +1,11 @@
 groups:
-  - name: node-app-alerts
+  - name: nodejs_app_alerts
     rules:
-      - alert: AppDown
-        expr: absent(up{job="node-app-service"})
+      - alert: NodeJSAppDown
+        expr: up{job="nodejs_app"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: "Node.js App is down"
-          description: "Prometheus has not been able to scrape the /metrics endpoint for 1 minute."
-      - alert: HighErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
-        for: 1m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High error rate detected"
-          description: "Error rate exceeds 5% in the last 5 minutes."
-      - alert: HighMemoryUsage
-        expr: container_memory_usage_bytes{pod=~"node-app-.*"} > 500000000
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: "High memory usage detected"
-          description: "Memory usage is above 500MB for pod {{ $labels.pod }}."
+          description: "The Node.js application is not responding to Prometheus on {{ $labels.instance }}."
