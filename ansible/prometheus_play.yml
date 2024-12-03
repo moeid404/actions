@@ -11,3 +11,4 @@
     - 2.monitoring/5.grafana
     - 2.monitoring/6.node_exporter
     - 2.monitoring/7.alert_manager
+    - 2.monitoring/8.iptables
