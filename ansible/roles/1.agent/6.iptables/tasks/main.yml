@@ -6,3 +6,4 @@
 
 - name: Apply iptables rules
   script: iptables.sh
+  ignore_errors: yes

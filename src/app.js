@@ -8,7 +8,6 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
-app.use(morgan('dev'));
 
 // Prometheus Metrics
 const collectDefaultMetrics = client.collectDefaultMetrics;
