@@ -83,6 +83,14 @@ resource "aws_instance" "agent" {
     Environment = "production" # Added to filter instances for GitHub Actions
     Role        = "agent"
   }
+
+  # Adding EBS Volume
+  root_block_device {
+    volume_size = 20  # Modify the size as needed (in GB)
+    volume_type = "gp2"  # General Purpose SSD
+    delete_on_termination = true
+  }
+
 }
 
 resource "aws_instance" "prometheus" {
