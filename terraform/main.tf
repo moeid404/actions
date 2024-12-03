@@ -86,7 +86,7 @@ resource "aws_instance" "agent" {
 
   # # Adding EBS Volume
   # root_block_device {
-  #   volume_size = 20  # Modify the size as needed (in GB)
+  #   volume_size = 10  # Modify the size as needed (in GB)
   #   volume_type = "gp2"  # General Purpose SSD
   #   delete_on_termination = true
   # }
